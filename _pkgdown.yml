@@ -1,0 +1,109 @@
+destination: docs
+
+url: https://merck.github.io/gMCPLite/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#00857c"
+    navbar-light-brand-color: "#fff"
+    navbar-light-brand-hover-color: "#fff"
+    navbar-light-color: "#fff"
+    navbar-light-hover-color: "#fff"
+    navbar-light-active-color: "#fff"
+    dropdown-link-hover-color: "#fff"
+    dropdown-link-hover-bg: "#00857c"
+
+footer:
+  structure:
+    left: [developed_by, built_with, legal]
+    right: [blank]
+  components:
+    legal: "<br>Copyright &copy; 2022 Merck & Co., Inc., Rahway, NJ, USA and its affiliates. All rights reserved."
+    blank: "<span></span>"
+
+code:
+  width: 74
+
+reference:
+  - title: Graphical functions
+  - subtitle: Core graphical functions
+  - contents:
+      - gMCP
+      - graphMCP-class
+      - gMCPResult-class
+      - hGraph
+      - matrix2graph
+      - graph2matrix
+      - placeNodes
+      - rejectNode
+
+  - subtitle: Advanced graphical functions
+  - contents:
+      - gMCP.extended
+      - entangledMCP-class
+      - gPADInterim-class
+      - joinGraphs
+      - subgraph
+
+  - subtitle: Example graphs
+  - contents:
+      - BonferroniHolm
+      - BretzEtAl2011
+      - BauerEtAl2001
+      - BretzEtAl2009a
+      - BretzEtAl2009b
+      - BretzEtAl2009c
+      - HommelEtAl2007
+      - HommelEtAl2007Simple
+      - parallelGatekeeping
+      - improvedParallelGatekeeping
+      - fallback
+      - fixedSequence
+      - simpleSuccessiveI
+      - simpleSuccessiveII
+      - truncatedHolm
+      - generalSuccessive
+      - HuqueAloshEtBhore2011
+      - HungEtWang2010
+      - MaurerEtAl1995
+      - cycleGraph
+      - improvedFallbackI
+      - improvedFallbackII
+      - FerberTimeDose2011
+      - Ferber2011
+      - Entangled1Maurer2012
+      - Entangled2Maurer2012
+      - WangTing2014
+
+  - title: Testing functions
+  - subtitle: Core testing functions
+  - contents:
+      - graphTest
+      - generateWeights
+      - generatePvals
+
+  - subtitle: Testing procedures
+  - contents:
+      - bonferroni.test
+      - bonferroni.trimmed.simes.test
+      - simes.test
+      - simes.on.subsets.test
+      - parametric.test
+      - weighted.test.functions
+
+  - subtitle: Confidence interval
+  - contents:
+      - simConfint
+
+  - title: Utility functions
+  - subtitle: Graphical-related
+  - contents:
+      - substituteEps
+      - replaceVariables
+      - bdiagNA
+      - checkCorrelation
+
+  - subtitle: Simulation-related
+  - contents:
+      - permutations

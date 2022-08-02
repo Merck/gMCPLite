@@ -1,0 +1,23 @@
+The code in the following files:
+  closure.R
+  exampleGraphs.R
+  gACT-internal.R
+  generatePvals.R
+  generateWeights.R
+  gMCP.extended.R
+  gMCP.R
+  gPAD.R
+  graph2latex.R
+  graphMCP.R
+  graphTest.R
+  matrix2graph.R
+  misc.R
+  modifyGraphs.R
+under the R/ subdirectory and the code in the three files:
+  gMCP.c
+  gMCPLite-init.c
+  mcp.c
+under the src/ subdirectory were originally written by
+  Kornelius Rohmeyer <rohmeyer@small-projects.de> and
+  Florian Klinglmueller <float@lefant.net>,
+  and modified by Yalin Zhu, Yilong Zhang, and Nan Xiao.
