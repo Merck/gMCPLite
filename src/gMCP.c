@@ -6,7 +6,7 @@ SEXP cgMCP(double *oldM, double *oldW, double *p, double *a, int *n, double *s, 
     /* Since declarations in 'for' loops are only allowed in C99 mode and we can
      * only expect an ISO C99 C compiler for R > 2.12, we now declare these variables
      * in the beginning.
-     * See http://cran.r-project.org/doc/manuals/R-ints.html#R-coding-standards
+     * See https://cran.r-project.org/doc/manuals/R-ints.html#R-coding-standards
      */
 	int i=0,j=0,k=0,l=0;
 	/* s is a vector initialized with 0 - later node i is rejected <=> s[i]==1 */
