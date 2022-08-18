@@ -153,6 +153,185 @@ for multiple endpoint analyses using sequentially rejective graphical
 procedures, to appear in Statistics in Medicine</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#### example from Bretz et al. (2010)</span></span></span>
+<span class="r-in"><span><span class="va">weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,       <span class="fl">0.5</span>, <span class="fl">0</span>,     <span class="fl">0.5</span>, <span class="fl">0</span>,      <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">3</span>,     <span class="fl">0</span>,   <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>,    <span class="fl">0</span>,   <span class="fl">1</span><span class="op">/</span><span class="fl">3</span>,    <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,       <span class="fl">0.5</span>, <span class="fl">0</span>,     <span class="fl">0</span>,   <span class="fl">0</span>,      <span class="fl">0.5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,       <span class="fl">1</span>,   <span class="fl">0</span>,     <span class="fl">0</span>,   <span class="fl">0</span>,      <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>,     <span class="fl">0</span>,   <span class="fl">0.5</span>,   <span class="fl">0</span>,   <span class="fl">0</span>,      <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,       <span class="fl">1</span>,   <span class="fl">0</span>,     <span class="fl">0</span>,   <span class="fl">0</span>,      <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pvals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.008</span>, <span class="fl">0.005</span>, <span class="fl">0.15</span>, <span class="fl">0.04</span>, <span class="fl">0.006</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">graphTest</span><span class="op">(</span><span class="va">pvals</span>, <span class="va">weights</span>, alpha<span class="op">=</span><span class="fl">0.025</span>, <span class="va">graph</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1 H2 H3 H4 H5 H6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0  1  1  0  0  1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"last.alphas")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.016666667 0.000000000 0.000000000 0.000000000 0.008333333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6] 0.000000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"last.G")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      [,1] [,2] [,3]      [,4]      [,5] [,6]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,]  0.0    0    0 0.6666667 0.3333333    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,]  0.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,]  0.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,]  0.5    0    0 0.0000000 0.5000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5,]  1.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6,]  0.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## observe graphical procedure in detail</span></span></span>
+<span class="r-in"><span><span class="fu">graphTest</span><span class="op">(</span><span class="va">pvals</span>, <span class="va">weights</span>, alpha<span class="op">=</span><span class="fl">0.025</span>, <span class="va">graph</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Reject hypothesis 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Updated alphas and graph:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a1: 0.011 a2: 0.000 a3: 0.011 a4: 0.000 a5: 0.003 a6: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G11: 0.000 G12: 0.000 G13: 0.200 G14: 0.600 G15: 0.200 G16: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G21: 0.000 G22: 0.000 G23: 0.000 G24: 0.000 G25: 0.000 G26: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G31: 0.200 G32: 0.000 G33: 0.000 G34: 0.000 G35: 0.200 G36: 0.600 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G41: 0.333 G42: 0.000 G43: 0.333 G44: 0.000 G45: 0.333 G46: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G51: 0.500 G52: 0.000 G53: 0.500 G54: 0.000 G55: 0.000 G56: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G61: 0.333 G62: 0.000 G63: 0.333 G64: 0.000 G65: 0.333 G66: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Reject hypothesis 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Updated alphas and graph:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a1: 0.013 a2: 0.000 a3: 0.000 a4: 0.000 a5: 0.005 a6: 0.007 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G11: 0.000 G12: 0.000 G13: 0.000 G14: 0.625 G15: 0.250 G16: 0.125 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G21: 0.000 G22: 0.000 G23: 0.000 G24: 0.000 G25: 0.000 G26: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G31: 0.000 G32: 0.000 G33: 0.000 G34: 0.000 G35: 0.000 G36: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G41: 0.400 G42: 0.000 G43: 0.000 G44: 0.000 G45: 0.400 G46: 0.200 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G51: 0.667 G52: 0.000 G53: 0.000 G54: 0.000 G55: 0.000 G56: 0.333 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G61: 0.500 G62: 0.000 G63: 0.000 G64: 0.000 G65: 0.500 G66: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Reject hypothesis 6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Updated alphas and graph:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a1: 0.017 a2: 0.000 a3: 0.000 a4: 0.000 a5: 0.008 a6: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G11: 0.000 G12: 0.000 G13: 0.000 G14: 0.667 G15: 0.333 G16: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G21: 0.000 G22: 0.000 G23: 0.000 G24: 0.000 G25: 0.000 G26: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G31: 0.000 G32: 0.000 G33: 0.000 G34: 0.000 G35: 0.000 G36: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G41: 0.500 G42: 0.000 G43: 0.000 G44: 0.000 G45: 0.500 G46: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G51: 1.000 G52: 0.000 G53: 0.000 G54: 0.000 G55: 0.000 G56: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G61: 0.000 G62: 0.000 G63: 0.000 G64: 0.000 G65: 0.000 G66: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1 H2 H3 H4 H5 H6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0  1  1  0  0  1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"last.alphas")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.016666667 0.000000000 0.000000000 0.000000000 0.008333333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6] 0.000000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> attr(,"last.G")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      [,1] [,2] [,3]      [,4]      [,5] [,6]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,]  0.0    0    0 0.6666667 0.3333333    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,]  0.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,]  0.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,]  0.5    0    0 0.0000000 0.5000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5,]  1.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6,]  0.0    0    0 0.0000000 0.0000000    0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## now use many p-values (useful for power simulations)</span></span></span>
+<span class="r-in"><span><span class="va">pvals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="fl">6e4</span>, <span class="fl">1</span>, <span class="fl">30</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">graphTest</span><span class="op">(</span><span class="va">pvals</span>, <span class="va">weights</span>, alpha<span class="op">=</span><span class="fl">0.025</span>, <span class="va">graph</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      H1 H2 H3 H4 H5 H6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,]  0  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,]  0  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,]  1  1  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,]  0  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5,]  0  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6,]  0  0  0  0  0  0</span>
+<span class="r-in"><span><span class="co"># example using multiple graphs (instead of 1)</span></span></span>
+<span class="r-in"><span><span class="va">G1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.5</span>,<span class="fl">0.5</span>,<span class="fl">0</span>,<span class="fl">0</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">0</span>,<span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>            <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">-</span><span class="fl">0.01</span>, <span class="fl">0.01</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>            <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">G2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">0</span>,<span class="fl">0</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>,<span class="fl">0</span>,<span class="fl">0.5</span>,<span class="fl">0</span>,<span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>            <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0.01</span>, <span class="fl">1</span><span class="op">-</span><span class="fl">0.01</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>            <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pvals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.012</span>, <span class="fl">0.025</span>, <span class="fl">0.005</span>, <span class="fl">0.0015</span>, <span class="fl">0.0045</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">graphTest</span><span class="op">(</span><span class="va">pvals</span>, <span class="va">weights</span>, alpha<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0125</span>, <span class="fl">0.0125</span><span class="op">)</span>, G<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">G1</span>, <span class="va">G2</span><span class="op">)</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Reject hypothesis 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Updated alphas and graphs:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a11: 0.000 a12: 0.006 a13: 0.006 a14: 0.000 a15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,11: 0.000 G1,12: 0.000 G1,13: 0.000 G1,14: 0.000 G1,15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,21: 0.000 G1,22: 0.000 G1,23: 1.000 G1,24: 0.000 G1,25: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,31: 0.000 G1,32: 0.000 G1,33: 0.000 G1,34: 0.990 G1,35: 0.010 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,41: 0.000 G1,42: 1.000 G1,43: 0.000 G1,44: 0.000 G1,45: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,51: 0.000 G1,52: 0.000 G1,53: 0.000 G1,54: 0.000 G1,55: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a21: 0.000 a22: 0.013 a23: 0.000 a24: 0.000 a25: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,11: 0.000 G2,12: 0.000 G2,13: 0.000 G2,14: 0.000 G2,15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,21: 0.000 G2,22: 0.000 G2,23: 1.000 G2,24: 0.000 G2,25: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,31: 0.000 G2,32: 0.000 G2,33: 0.000 G2,34: 0.010 G2,35: 0.990 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,41: 0.000 G2,42: 0.000 G2,43: 0.000 G2,44: 0.000 G2,45: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,51: 0.000 G2,52: 0.000 G2,53: 1.000 G2,54: 0.000 G2,55: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Reject hypothesis 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Updated alphas and graphs:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a11: 0.000 a12: 0.006 a13: 0.000 a14: 0.006 a15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,11: 0.000 G1,12: 0.000 G1,13: 0.000 G1,14: 0.000 G1,15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,21: 0.000 G1,22: 0.000 G1,23: 0.000 G1,24: 0.990 G1,25: 0.010 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,31: 0.000 G1,32: 0.000 G1,33: 0.000 G1,34: 0.000 G1,35: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,41: 0.000 G1,42: 1.000 G1,43: 0.000 G1,44: 0.000 G1,45: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,51: 0.000 G1,52: 0.000 G1,53: 0.000 G1,54: 0.000 G1,55: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a21: 0.000 a22: 0.013 a23: 0.000 a24: 0.000 a25: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,11: 0.000 G2,12: 0.000 G2,13: 0.000 G2,14: 0.000 G2,15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,21: 0.000 G2,22: 0.000 G2,23: 0.000 G2,24: 0.010 G2,25: 0.990 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,31: 0.000 G2,32: 0.000 G2,33: 0.000 G2,34: 0.000 G2,35: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,41: 0.000 G2,42: 0.000 G2,43: 0.000 G2,44: 0.000 G2,45: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,51: 0.000 G2,52: 0.000 G2,53: 0.000 G2,54: 1.000 G2,55: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Reject hypothesis 4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Updated alphas and graphs:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a11: 0.000 a12: 0.012 a13: 0.000 a14: 0.000 a15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,11: 0.000 G1,12: 0.000 G1,13: 0.000 G1,14: 0.000 G1,15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,21: 0.000 G1,22: 0.000 G1,23: 0.000 G1,24: 0.000 G1,25: 1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,31: 0.000 G1,32: 0.000 G1,33: 0.000 G1,34: 0.000 G1,35: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,41: 0.000 G1,42: 0.000 G1,43: 0.000 G1,44: 0.000 G1,45: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G1,51: 0.000 G1,52: 0.000 G1,53: 0.000 G1,54: 0.000 G1,55: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a21: 0.000 a22: 0.013 a23: 0.000 a24: 0.000 a25: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,11: 0.000 G2,12: 0.000 G2,13: 0.000 G2,14: 0.000 G2,15: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,21: 0.000 G2,22: 0.000 G2,23: 0.000 G2,24: 0.000 G2,25: 0.990 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,31: 0.000 G2,32: 0.000 G2,33: 0.000 G2,34: 0.000 G2,35: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,41: 0.000 G2,42: 0.000 G2,43: 0.000 G2,44: 0.000 G2,45: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> G2,51: 0.000 G2,52: 0.000 G2,53: 0.000 G2,54: 0.000 G2,55: 0.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## now again with many p-values</span></span></span>
+<span class="r-in"><span><span class="va">pvals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Beta.html" class="external-link">rbeta</a></span><span class="op">(</span><span class="fl">5e4</span>, <span class="fl">1</span>, <span class="fl">30</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">graphTest</span><span class="op">(</span><span class="va">pvals</span>, <span class="va">weights</span>, alpha<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.0125</span>, <span class="fl">0.0125</span><span class="op">)</span>, G<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">G1</span>, <span class="va">G2</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      H1 H2 H3 H4 H5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,]  1  1  1  0  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,]  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,]  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,]  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5,]  0  0  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6,]  0  0  0  0  0</span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 

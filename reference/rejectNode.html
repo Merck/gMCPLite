@@ -114,6 +114,67 @@ Statistics in Medicine 2009 vol. 28 issue 4 page 586-604.
     <p>Kornelius Rohmeyer <a href="mailto:rohmeyer@small-projects.de">rohmeyer@small-projects.de</a></p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">0</span>, nrow <span class="op">=</span> <span class="fl">4</span>, ncol <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">m</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">m</span><span class="op">[</span><span class="fl">2</span>,<span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">m</span><span class="op">[</span><span class="fl">3</span>,<span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">m</span><span class="op">[</span><span class="fl">4</span>,<span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.005</span>, <span class="fl">0.01</span>, <span class="fl">0.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">0.05</span></span></span>
+<span class="r-in"><span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">/</span><span class="fl">2</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="matrix2graph.html">matrix2graph</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">w</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="gMCP.html">gMCP</a></span><span class="op">(</span><span class="va">g</span>, pvalues<span class="op">=</span><span class="va">p1</span>, alpha<span class="op">=</span><span class="va">a</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gMCP-Result</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Initial graph:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> A graphMCP graph</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1 (weight=0.5)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H2 (weight=0.5)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H3 (weight=0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H4 (weight=0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Edges:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1  -( 1 )-&gt;  H3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H2  -( 1 )-&gt;  H4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H3  -( 1 )-&gt;  H2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H4  -( 1 )-&gt;  H1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> P-values:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    H1    H2    H3    H4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.010 0.005 0.010 0.500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Adjusted p-values:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   H1   H2   H3   H4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.02 0.01 0.02 0.50 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Alpha: 0.05 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Hypothesis rejected:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    H1    H2    H3    H4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  TRUE  TRUE  TRUE FALSE </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Final graph after 3 steps:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> A graphMCP graph</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1 (rejected, weight=0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H2 (rejected, weight=0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H3 (rejected, weight=0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H4 (weight=1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> No edges.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="fu">rejectNode</span><span class="op">(</span>graph <span class="op">=</span> <span class="va">g</span>, node <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> A graphMCP graph</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1 (weight=0.5)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H2 (weight=0.5)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H3 (weight=0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H4 (rejected, weight=0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Edges:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1  -( 1 )-&gt;  H3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H2  -( 1 )-&gt;  H1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H3  -( 1 )-&gt;  H2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 
