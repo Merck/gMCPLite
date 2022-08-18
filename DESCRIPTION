@@ -17,10 +17,10 @@ Authors@R: c(
     person("Merck & Co., Inc., Rahway, NJ, USA and its affiliates", role = "cph")
     )
 Description: A lightweight fork of 'gMCP' with functions for graphical
-    described multiple test procedures. Implement a flexible graph function 
-    using 'ggplot2' visualizations to create a multiplicity graph. 
-    Contain instructions of multiplicity graph and graphical testing for 
-    group sequential design, and necessary unit testing cases using `testthat`. 
+    described multiple test procedures. Implements a flexible function
+    using 'ggplot2' to create multiplicity graph visualizations.
+    Contains instructions of multiplicity graph and graphical testing for
+    group sequential design, with necessary unit testing using 'testthat'.
 License: GPL-3
 URL: https://merck.github.io/gMCPLite/, https://github.com/Merck/gMCPLite
 BugReports: https://github.com/Merck/gMCPLite/issues
