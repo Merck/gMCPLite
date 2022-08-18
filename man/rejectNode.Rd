@@ -31,6 +31,18 @@ Rejects a node/hypothesis and updates the graph accordingly.
 \details{
 For details see the given references.
 }
+\examples{
+m <- matrix(0, nrow = 4, ncol = 4)
+m[1,3] <- m[2,4] <- m[3,2] <- m[4,1] <- 1
+p1 <- c(0.01, 0.005, 0.01, 0.5)
+a <- 0.05
+w <- c(1/2, 1/2, 0, 0)
+g <- matrix2graph(m, w)
+gMCP(g, pvalues=p1, alpha=a)
+rejectNode(graph = g, node = 4)
+
+
+}
 \references{
 Frank Bretz, Willi Maurer, Werner Brannath, Martin Posch: A
 graphical approach to sequentially rejective multiple test procedures.

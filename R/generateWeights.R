@@ -14,13 +14,13 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 #' generateWeights
-#' 
+#'
 #' compute Weights for each intersection Hypotheses in the closure of a graph
 #' based multiple testing procedure
-#' 
-#' 
+#'
+#'
 #' @param g Graph either defined as a matrix (each element defines how much of the
 #' local alpha reserved for the hypothesis corresponding to its row index is
 #' passed on to the hypothesis corresponding to its column index), as \code{graphMCP}
@@ -43,7 +43,7 @@
 #' weighted Bonferroni, Simes or parametric tests - to appear
 #' @keywords htest
 #' @examples
-#' 
+#'
 #'  g <- matrix(c(0,0,1,0,
 #'                0,0,0,1,
 #'                0,1,0,0,
@@ -52,28 +52,28 @@
 #'  w <- c(.5,.5,0,0)
 #'  ## Weights of conventional gMCP test:
 #'  generateWeights(g,w)
-#'  
+#'
 #' g <- Entangled2Maurer2012()
 #' generateWeights(g)
-#' 
+#'
 #' @export generateWeights
-#' 
+#'
 generateWeights <- function(g,w){
   if ("entangledMCP" %in% class(g)) {
     mL <- getMatrices(g)
     wL <- getWeights(g)
     split <- g@weights
-    result <- 0    
+    result <- 0
     for (i in 1:length(mL)) {
       m <- mL[[i]]
       w <- wL[i,]
-      result <- result + split[i]*generateWeights(m, w)      
+      result <- result + split[i]*generateWeights(m, w)
     }
     n <- dim(m)[1]
     # If weights don't sum up to one:
     result[,1:n][result[,1:n]>0] <- 1
     return(result)
-  } else if ("graphMCP" %in% class(g)) {    
+  } else if ("graphMCP" %in% class(g)) {
     if (missing(w)) {
       w <- getWeights(g)
     }
@@ -88,10 +88,4 @@ generateWeights <- function(g,w){
   m <- as.matrix(as.data.frame(lapply(g,function(i) c(i$int,i$w))))
   colnames(m) <- NULL
   t(m)
-}
-
-# Calculation time note: n=22 needs 12 seconds on my computer.
-# With each further step calculation time nearly doubles.
-permutations <- function(n) {
-	outer((1:(2^n))-1, (n:1)-1, FUN=function(x,y) {(x%/%2^y)%%2})
 }

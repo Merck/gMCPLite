@@ -45,7 +45,6 @@ each variable replaced with the specified numeric value.
 }
 \examples{
 
-
 graph <- HungEtWang2010()
 \dontrun{
 replaceVariables(graph)

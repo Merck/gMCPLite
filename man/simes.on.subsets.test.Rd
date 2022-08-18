@@ -33,6 +33,9 @@ Otherwise if \code{adjPValues==FALSE} a logical value is returned whether the nu
 
 \item{...}{Further arguments possibly passed by \code{gMCP} which will be used by other test procedures but not this one.}
 }
+\value{
+adjusted p-value or decision of rejection
+}
 \description{
 Weighted Simes test introduced by Benjamini and Hochberg (1997)
 }

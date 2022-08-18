@@ -14,7 +14,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 #' Graph based Multiple Comparison Procedures
 #'
 #' Performs a graph based multiple test procedure for a given graph and
@@ -420,6 +420,18 @@ adjPValues <- function(graph, pvalues, upscale=FALSE, verbose=FALSE) {
 #' without outgoing edges is set to 0 if it is removed.  Otherwise it keeps its
 #' weight.
 #' @return An updated graph of class \code{graphMCP} or \code{entangledMCP}.
+#'
+#' @examples
+#' m <- matrix(0, nrow = 4, ncol = 4)
+#' m[1,3] <- m[2,4] <- m[3,2] <- m[4,1] <- 1
+#' p1 <- c(0.01, 0.005, 0.01, 0.5)
+#' a <- 0.05
+#' w <- c(1/2, 1/2, 0, 0)
+#' g <- matrix2graph(m, w)
+#' gMCP(g, pvalues=p1, alpha=a)
+#' rejectNode(graph = g, node = 4)
+#'
+#'
 #' @author Kornelius Rohmeyer \email{rohmeyer@@small-projects.de}
 #' @seealso \code{graphMCP}
 #' @references Frank Bretz, Willi Maurer, Werner Brannath, Martin Posch: A

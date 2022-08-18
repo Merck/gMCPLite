@@ -35,6 +35,9 @@ for more information)}
 
 \item{...}{Further arguments possibly passed by \code{gMCP} which will be used by other test procedures but not this one.}
 }
+\value{
+adjusted p-value or decision of rejection
+}
 \description{
 It is assumed that under the global null hypothesis
 \eqn{(\Phi^{-1}(1-p_1),...,\Phi^{-1}(1-p_m))} follow a multivariate normal
@@ -65,6 +68,13 @@ intersection null hypotheses tests are not uniquely defined and an error is
 returned.
 
 For further details see the given references.
+}
+\examples{
+
+parametric.test(pvalues=c(0.1,0.2,0.05), weights=c(0.5,0.5,0), correlation = diag(3))
+parametric.test(pvalues=c(0.1,0.2,0.05), weights=c(0.5,0.5,0), correlation = diag(3),
+adjPValues = FALSE)
+
 }
 \references{
 Bretz F., Posch M., Glimm E., Klinglmueller F., Maurer W., Rohmeyer K.

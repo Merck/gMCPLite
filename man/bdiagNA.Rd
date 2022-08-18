@@ -21,10 +21,7 @@ This function is usefull to build the correlation matrices, when only
 partial knowledge of the correlation exists.
 }
 \examples{
-
-
 bdiagNA(diag(3), matrix(1/2,nr=3,nc=3), diag(2))
-
 
 }
 \seealso{

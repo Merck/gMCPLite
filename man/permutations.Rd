@@ -2,19 +2,20 @@
 % Please edit documentation in R/misc.R
 \name{permutations}
 \alias{permutations}
-\title{Title Placeholder}
+\title{Permutation for a design matrix}
 \usage{
 permutations(n)
 }
 \arguments{
-\item{n}{TBA}
+\item{n}{dimension of the matrix}
 }
 \value{
-TBA
+a n*(2^n) dimensional matrix
 }
 \description{
-Description placeholder.
+Permutation for a design matrix
 }
 \examples{
-NULL
+permutations(3)
+
 }
