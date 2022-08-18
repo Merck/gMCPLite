@@ -39,7 +39,7 @@ based multiple testing procedure
  w <- c(.5,.5,0,0)
  ## Weights of conventional gMCP test:
  generateWeights(g,w)
- 
+
 g <- Entangled2Maurer2012()
 generateWeights(g)
 

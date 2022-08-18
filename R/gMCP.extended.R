@@ -14,7 +14,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 #' Weighted Test Functions for use with gMCP
 #'
 #' The package gMCP provides the following weighted test functions:
@@ -77,8 +77,6 @@ NULL
 
 #' Weighted Bonferroni-test
 #'
-#'
-#'
 #' @param pvalues A numeric vector specifying the p-values.
 #' @param weights A numeric vector of weights.
 #' @param adjPValues Logical scalar. If \code{TRUE} (the default) an adjusted p-value for the weighted Bonferroni-test is returned.
@@ -86,6 +84,7 @@ NULL
 #' @param alpha A numeric specifying the maximal allowed type one error rate. If \code{adjPValues==TRUE} (default) the parameter \code{alpha} is not used.
 #' @param verbose Logical scalar. If \code{TRUE} verbose output is generated.
 #' @param ... Further arguments possibly passed by \code{gMCP} which will be used by other test procedures but not this one.
+#' @return adjusted p-value or decision of rejection
 #' @examples
 #'
 #' bonferroni.test(pvalues=c(0.1,0.2,0.05), weights=c(0.5,0.5,0))
@@ -144,6 +143,12 @@ bonferroni.test <- function(pvalues, weights, alpha=0.05, adjPValues=TRUE, verbo
 #' Otherwise if \code{adjPValues==FALSE} a logical value is returned whether the null hypothesis can be rejected.
 #' @param verbose Logical scalar. If \code{TRUE} verbose output is generated.
 #' @param ... Further arguments possibly passed by \code{gMCP} which will be used by other test procedures but not this one.
+#' @return adjusted p-value or decision of rejection
+#' @examples
+#'
+#' parametric.test(pvalues=c(0.1,0.2,0.05), weights=c(0.5,0.5,0), correlation = diag(3))
+#' parametric.test(pvalues=c(0.1,0.2,0.05), weights=c(0.5,0.5,0), correlation = diag(3),
+#' adjPValues = FALSE)
 #'
 #' @references
 #' Bretz F., Posch M., Glimm E., Klinglmueller F., Maurer W., Rohmeyer K.
@@ -198,6 +203,7 @@ parametric.test <- function(pvalues, weights, alpha=0.05, adjPValues=TRUE, verbo
 #' @param alpha A numeric specifying the maximal allowed type one error rate. If \code{adjPValues==TRUE} (default) the parameter \code{alpha} is not used.
 #' @param verbose Logical scalar. If \code{TRUE} verbose output is generated.
 #' @param ... Further arguments possibly passed by \code{gMCP} which will be used by other test procedures but not this one.
+#' @return adjusted p-value or decision of rejection
 #' @references
 #' Brannath, W., Bretz, F., Maurer, W., & Sarkar, S. (2009).
 #' Trimmed Weighted Simes Test for Two One-Sided Hypotheses With Arbitrarily Correlated Test Statistics.
@@ -239,6 +245,7 @@ bonferroni.trimmed.simes.test <- function(pvalues, weights, alpha=0.05, adjPValu
 #' @param subsets A list of subsets given by numeric vectors containing the indices of the elementary hypotheses for which the weighted Simes test is applicable.
 #' @param subset A numeric vector containing the numbers of the indices of the currently tested elementary hypotheses.
 #' @param ... Further arguments possibly passed by \code{gMCP} which will be used by other test procedures but not this one.
+#' @return adjusted p-value or decision of rejection
 #' @examples
 #'
 #' simes.on.subsets.test(pvalues=c(0.1,0.2,0.05), weights=c(0.5,0.5,0))
@@ -274,6 +281,7 @@ simes.on.subsets.test <- function(pvalues, weights, alpha=0.05, adjPValues=TRUE,
 #' @param alpha A numeric specifying the maximal allowed type one error rate. If \code{adjPValues==TRUE} (default) the parameter \code{alpha} is not used.
 #' @param verbose Logical scalar. If \code{TRUE} verbose output is generated.
 #' @param ... Further arguments possibly passed by \code{gMCP} which will be used by other test procedures but not this one.
+#' @return adjusted p-value or decision of rejection
 #' @examples
 #'
 #' simes.test(pvalues=c(0.1,0.2,0.05), weights=c(0.5,0.5,0))

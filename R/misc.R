@@ -14,7 +14,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 checkValidWeights <- function(weights) {
   if(!is.numeric(weights)) {
     stop("Weights have to be numeric!")
@@ -102,7 +102,6 @@ substituteEps <- function(graph, eps=10^(-3)) {
 #' @seealso \code{graphMCP}, \code{entangledMCP}
 #' @keywords print graphs
 #' @examples
-#'
 #'
 #' graph <- HungEtWang2010()
 #' \dontrun{
@@ -236,10 +235,7 @@ varcombs <- function(variables) {
 #' @author Kornelius Rohmeyer \email{rohmeyer@@small-projects.de}
 #' @seealso \code{\link{gMCP}}
 #' @examples
-#'
-#'
 #' bdiagNA(diag(3), matrix(1/2,nr=3,nc=3), diag(2))
-#'
 #'
 #' @export bdiagNA
 bdiagNA <- function(...) {
@@ -332,18 +328,17 @@ checkCorrelation <- function(m, returnMessage = FALSE, na.allowed = TRUE) {
 # Calculation time note: n=22 needs 12 seconds on my computer.
 # With each further step calculation time nearly doubles.
 
-#' Title Placeholder
+#' Permutation for a design matrix
 #'
-#' Description placeholder.
+#' @param n dimension of the matrix
 #'
-#' @param n TBA
+#' @return a n*(2^n) dimensional matrix
 #'
-#' @return TBA
+#' @examples
+#' permutations(3)
 #'
 #' @export permutations
 #'
-#' @examples
-#' NULL
 permutations <- function(n) {
   outer(
     (1:(2^n)) - 1, (n:1) - 1,
