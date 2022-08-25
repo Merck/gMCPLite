@@ -63,12 +63,12 @@ substituteEps <- function(graph, eps=10^(-3)) {
   # Real function:
   if (is.numeric(graph@m)) return(graph)
   m <- matrix(gsub("\\\\epsilon", eps, graph@m), nrow=length(getNodes(graph)))
-  options(warn=-1)
+
   m2 <- matrix(sapply(m, function(x) {
     result <- try(eval(parse(text=x)), silent=TRUE);
     ifelse(class(result)=="try-error",NA,result)
   }), nrow=length(getNodes(graph)))
-  options(warn=0)
+
   if (all(is.na(m)==is.na(m2))) m <- m2
   rownames(m) <- colnames(m) <- getNodes(graph)
   graph@m <- m
@@ -104,9 +104,6 @@ substituteEps <- function(graph, eps=10^(-3)) {
 #' @examples
 #'
 #' graph <- HungEtWang2010()
-#' \dontrun{
-#' replaceVariables(graph)
-#' }
 #' replaceVariables(graph, list("tau"=0.5,"omega"=0.5, "nu"=0.5))
 #' replaceVariables(graph, list("tau"=c(0.1, 0.5, 0.9),"omega"=c(0.2, 0.8), "nu"=0.4))
 #'
@@ -375,11 +372,6 @@ permutations <- function(n) {
 #' g <- matrix2graph(matrix(0, nrow=6, ncol=6))
 #'
 #' g <- placeNodes(g, nrow=2, force=TRUE)
-#'
-#' \dontrun{
-#' graphGUI(g)
-#'
-#' }
 #'
 #'
 #' @export placeNodes
