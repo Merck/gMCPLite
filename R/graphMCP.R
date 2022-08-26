@@ -14,7 +14,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 ## Graph representation in gMCP
 
 #' Class graphMCP
@@ -195,24 +195,24 @@ setMethod("print", "gMCPResult",
 setMethod("show", "gMCPResult",
 		function(object) {
 			# callNextMethod(x, ...)
-			cat("gMCP-Result\n")
-			cat("\nInitial graph:\n")
+			message("gMCP-Result\n")
+		  message("\nInitial graph:\n")
 			print(object@graphs[[1]])
-			cat("\nP-values:\n")
+			message("\nP-values:\n")
 			print(object@pvalues)
 			if (length(object@adjPValues)>0) {
-				cat("\nAdjusted p-values:\n")
+				message("\nAdjusted p-values:\n")
 				print(object@adjPValues)
 			}
-			cat(paste("\nAlpha:",object@alpha,"\n"))
+			message(paste("\nAlpha:",object@alpha,"\n"))
 			if (all(!object@rejected)) {
-				cat("\nNo hypotheses could be rejected.\n")
+			  message("\nNo hypotheses could be rejected.\n")
 			} else {
-				cat("\nHypothesis rejected:\n")
+			  message("\nHypothesis rejected:\n")
 				print(object@rejected)
 			}
 			if (length(object@graphs)>1) {
-				cat("\nFinal graph after", length(object@graphs)-1 ,"steps:\n")
+			  message("\nFinal graph after", length(object@graphs)-1 ,"steps:\n")
 				print(object@graphs[[length(object@graphs)]])
 			}
 		})
@@ -414,31 +414,31 @@ setMethod("show", "graphMCP",
 		function(object) {
 			#callNextMethod(object)
 			nn <- getNodes(object)
-			cat("A graphMCP graph\n")
+			message("A graphMCP graph\n")
 			if (!isTRUE(all.equal(sum(getWeights(object)),1))) {
-				cat(paste("Sum of weight: ",sum(getWeights(object)),"\n", sep=""))
+			  message(paste("Sum of weight: ",sum(getWeights(object)),"\n", sep=""))
 			}
 			for (node in getNodes(object)) {
-				cat(paste(node, " (",ifelse(nodeAttr(object, node, "rejected"),"rejected, ",""),"weight=",format(object@weights[node], digits=4, drop0trailing=TRUE),")\n", sep=""))
+			  message(paste(node, " (",ifelse(nodeAttr(object, node, "rejected"),"rejected, ",""),"weight=",format(object@weights[node], digits=4, drop0trailing=TRUE),")\n", sep=""))
 			}
 			printEdge <- FALSE;
 			for (i in getNodes(object)) {
 				for (j in getNodes(object)) {
 					if (object@m[i,j]!=0) {
 						if (!printEdge) {
-							cat("Edges:\n")
+						  message("Edges:\n")
 							printEdge <- TRUE
 						}
-						cat(paste(i, " -(", object@m[i,j], ")-> ", j, "\n"))
+					  message(paste(i, " -(", object@m[i,j], ")-> ", j, "\n"))
 					}
 				}
 			}
-			if (!printEdge) cat("No edges.\n")
+			if (!printEdge) message("No edges.\n")
 			#if (!is.null(attr(object, "pvalues"))) { # TODO Do we want to have more output here?
-			#  cat("\nAttached p-values: ", attr(object, "pvalues"), "\n")
+			#  message("\nAttached p-values: ", attr(object, "pvalues"), "\n")
 			#}
-			#cat(paste("\nalpha=",paste(format(getWeights(object), digits=4 ,drop0trailing=TRUE),collapse="+"),"=",sum(getWeights(object)),"\n", sep=""))
-			cat("\n")
+			#message(paste("\nalpha=",paste(format(getWeights(object), digits=4 ,drop0trailing=TRUE),collapse="+"),"=",sum(getWeights(object)),"\n", sep=""))
+			message("\n")
 		}
 )
 
@@ -641,19 +641,19 @@ setMethod("print", "gPADInterim",
 
 setMethod("show","gPADInterim",
 		function(object) {
-			cat("Pre-planned graphical MCP at level:",object@alpha,"\n")
+		  message("Pre-planned graphical MCP at level:",object@alpha,"\n")
 			show(object@preplanned)
 			n <- length(object@z1)
-			cat("Proportion of pre-planned measurements\n collected up to interim:\n")
+			message("Proportion of pre-planned measurements\n collected up to interim:\n")
 			v <- object@v
                         if(length(v) == 1) v <- rep(v,n)
 			names(v) <- paste('H',1:n,sep='')
                         print(v)
-			cat("Z-scores computed at interim\n")
+			message("Z-scores computed at interim\n")
 			z1 <- object@z1
 			names(z1) <- paste('H',1:n,sep='')
 			print(z1)
-			cat("\n Interim PCE's by intersection\n")
+			message("\n Interim PCE's by intersection\n")
 			tab <- round(cbind(object@Aj,object@BJ),3)
 			rownames(tab) <- to.intersection(1:nrow(tab))
 			colnames(tab) <- c(paste('A(',1:n,')',sep=''),'BJ')

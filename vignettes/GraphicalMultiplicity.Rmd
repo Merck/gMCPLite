@@ -79,7 +79,8 @@ The initial code block sets options and loads needed packages; no modification s
 
 ```{r, message=FALSE, warning=FALSE}
 ### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
-options(scipen = 999)
+# Prefer fixed notation
+old <- options(scipen = 999)
 # Colorblind palette
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # 2 packages used for data storage and manipulation: dplyr, tibble
@@ -642,6 +643,11 @@ for (i in 1:nHypotheses) {
     }
   }
 }
+```
+
+```{r}
+# Restore default options
+options(old)
 ```
 
 ## Session information

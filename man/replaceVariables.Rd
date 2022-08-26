@@ -46,9 +46,6 @@ each variable replaced with the specified numeric value.
 \examples{
 
 graph <- HungEtWang2010()
-\dontrun{
-replaceVariables(graph)
-}
 replaceVariables(graph, list("tau"=0.5,"omega"=0.5, "nu"=0.5))
 replaceVariables(graph, list("tau"=c(0.1, 0.5, 0.9),"omega"=c(0.2, 0.8), "nu"=0.4))
 
