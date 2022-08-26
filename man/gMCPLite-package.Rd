@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-A lightweight fork of 'gMCP' with functions for graphical described multiple test procedures. Implements a flexible function using 'ggplot2' to create multiplicity graph visualizations. Contains instructions of multiplicity graph and graphical testing for group sequential design, with necessary unit testing using 'testthat'.
+A lightweight fork of 'gMCP' with functions for graphical described multiple test procedures introduced in Bretz et al. (2009) \doi{10.1002/sim.3495} and Bretz et al. (2011) \doi{10.1002/bimj.201000239}. Implements a flexible function using 'ggplot2' to create multiplicity graph visualizations. Contains instructions of multiplicity graph and graphical testing for group sequential design, with necessary unit testing using 'testthat'.
 }
 \seealso{
 Useful links:
