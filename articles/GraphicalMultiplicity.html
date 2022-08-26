@@ -128,7 +128,8 @@
 <p>To reveal code blocks for the remainder of the document, press the code buttons indicated throughout. The initial code block sets options and loads needed packages; no modification should be required by the user.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>scipen <span class="op">=</span> <span class="fl">999</span><span class="op">)</span></span>
+<span><span class="co"># Prefer fixed notation</span></span>
+<span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>scipen <span class="op">=</span> <span class="fl">999</span><span class="op">)</span></span>
 <span><span class="co"># Colorblind palette</span></span>
 <span><span class="va">cbPalette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#999999"</span>, <span class="st">"#E69F00"</span>, <span class="st">"#56B4E9"</span>, <span class="st">"#009E73"</span>, <span class="st">"#F0E442"</span>, <span class="st">"#0072B2"</span>, <span class="st">"#D55E00"</span>, <span class="st">"#CC79A7"</span><span class="op">)</span></span>
 <span><span class="co"># 2 packages used for data storage and manipulation: dplyr, tibble</span></span>
@@ -241,12 +242,12 @@
 <span>    footnote <span class="op">=</span> <span class="st">"Approximate hazard ratio at bound."</span>,</span>
 <span>    locations <span class="op">=</span> <span class="fu"><a href="https://gt.rstudio.com/reference/cells_body.html" class="external-link">cells_body</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="st">"Value"</span>, rows <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<div id="drecodkcao" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="qzsxmptljl" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#drecodkcao .gt_table {
+#qzsxmptljl .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -271,7 +272,7 @@
   border-left-color: #D3D3D3;
 }
 
-#drecodkcao .gt_heading {
+#qzsxmptljl .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -283,7 +284,7 @@
   border-right-color: #D3D3D3;
 }
 
-#drecodkcao .gt_title {
+#qzsxmptljl .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -295,7 +296,7 @@
   border-bottom-width: 0;
 }
 
-#drecodkcao .gt_subtitle {
+#qzsxmptljl .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -307,13 +308,13 @@
   border-top-width: 0;
 }
 
-#drecodkcao .gt_bottom_border {
+#qzsxmptljl .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#drecodkcao .gt_col_headings {
+#qzsxmptljl .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -328,7 +329,7 @@
   border-right-color: #D3D3D3;
 }
 
-#drecodkcao .gt_col_heading {
+#qzsxmptljl .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -348,7 +349,7 @@
   overflow-x: hidden;
 }
 
-#drecodkcao .gt_column_spanner_outer {
+#qzsxmptljl .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -360,15 +361,15 @@
   padding-right: 4px;
 }
 
-#drecodkcao .gt_column_spanner_outer:first-child {
+#qzsxmptljl .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#drecodkcao .gt_column_spanner_outer:last-child {
+#qzsxmptljl .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#drecodkcao .gt_column_spanner {
+#qzsxmptljl .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -380,7 +381,7 @@
   width: 100%;
 }
 
-#drecodkcao .gt_group_heading {
+#qzsxmptljl .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -405,7 +406,7 @@
   vertical-align: middle;
 }
 
-#drecodkcao .gt_empty_group_heading {
+#qzsxmptljl .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -420,15 +421,15 @@
   vertical-align: middle;
 }
 
-#drecodkcao .gt_from_md > :first-child {
+#qzsxmptljl .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#drecodkcao .gt_from_md > :last-child {
+#qzsxmptljl .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#drecodkcao .gt_row {
+#qzsxmptljl .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -447,7 +448,7 @@
   overflow-x: hidden;
 }
 
-#drecodkcao .gt_stub {
+#qzsxmptljl .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -460,7 +461,7 @@
   padding-right: 5px;
 }
 
-#drecodkcao .gt_stub_row_group {
+#qzsxmptljl .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -474,11 +475,11 @@
   vertical-align: top;
 }
 
-#drecodkcao .gt_row_group_first td {
+#qzsxmptljl .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#drecodkcao .gt_summary_row {
+#qzsxmptljl .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -488,16 +489,16 @@
   padding-right: 5px;
 }
 
-#drecodkcao .gt_first_summary_row {
+#qzsxmptljl .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#drecodkcao .gt_first_summary_row.thick {
+#qzsxmptljl .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#drecodkcao .gt_last_summary_row {
+#qzsxmptljl .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -507,7 +508,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#drecodkcao .gt_grand_summary_row {
+#qzsxmptljl .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -517,7 +518,7 @@
   padding-right: 5px;
 }
 
-#drecodkcao .gt_first_grand_summary_row {
+#qzsxmptljl .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -527,11 +528,11 @@
   border-top-color: #D3D3D3;
 }
 
-#drecodkcao .gt_striped {
+#qzsxmptljl .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#drecodkcao .gt_table_body {
+#qzsxmptljl .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -540,7 +541,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#drecodkcao .gt_footnotes {
+#qzsxmptljl .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -554,7 +555,7 @@
   border-right-color: #D3D3D3;
 }
 
-#drecodkcao .gt_footnote {
+#qzsxmptljl .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-left: 4px;
@@ -563,7 +564,7 @@
   padding-right: 5px;
 }
 
-#drecodkcao .gt_sourcenotes {
+#qzsxmptljl .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -577,7 +578,7 @@
   border-right-color: #D3D3D3;
 }
 
-#drecodkcao .gt_sourcenote {
+#qzsxmptljl .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -585,82 +586,75 @@
   padding-right: 5px;
 }
 
-#drecodkcao .gt_left {
+#qzsxmptljl .gt_left {
   text-align: left;
 }
 
-#drecodkcao .gt_center {
+#qzsxmptljl .gt_center {
   text-align: center;
 }
 
-#drecodkcao .gt_right {
+#qzsxmptljl .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#drecodkcao .gt_font_normal {
+#qzsxmptljl .gt_font_normal {
   font-weight: normal;
 }
 
-#drecodkcao .gt_font_bold {
+#qzsxmptljl .gt_font_bold {
   font-weight: bold;
 }
 
-#drecodkcao .gt_font_italic {
+#qzsxmptljl .gt_font_italic {
   font-style: italic;
 }
 
-#drecodkcao .gt_super {
+#qzsxmptljl .gt_super {
   font-size: 65%;
 }
 
-#drecodkcao .gt_two_val_uncert {
-  display: inline-block;
-  line-height: 1em;
-  text-align: right;
-  font-size: 60%;
-  vertical-align: -0.25em;
-  margin-left: 0.1em;
-}
-
-#drecodkcao .gt_footnote_marks {
+#qzsxmptljl .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 75%;
   vertical-align: 0.4em;
 }
 
-#drecodkcao .gt_asterisk {
+#qzsxmptljl .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#drecodkcao .gt_slash_mark {
-  font-size: 0.7em;
-  line-height: 0.7em;
-  vertical-align: 0.15em;
+#qzsxmptljl .gt_indent_1 {
+  text-indent: 5px;
 }
 
-#drecodkcao .gt_fraction_numerator {
-  font-size: 0.6em;
-  line-height: 0.6em;
-  vertical-align: 0.45em;
+#qzsxmptljl .gt_indent_2 {
+  text-indent: 10px;
 }
 
-#drecodkcao .gt_fraction_denominator {
-  font-size: 0.6em;
-  line-height: 0.6em;
-  vertical-align: -0.05em;
+#qzsxmptljl .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#qzsxmptljl .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#qzsxmptljl .gt_indent_5 {
+  text-indent: 25px;
 }
 </style>
 <table class="table gt_table">
 <thead class="gt_header"><tr>
-<th colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Design for OS in the Subgroup</th>
+<td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Design for OS in the Subgroup</td>
     </tr></thead>
 <thead class="gt_col_headings"><tr>
-<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Analysis</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Value</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">Efficacy</th>
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col">Analysis</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col">Value</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col">Efficacy</th>
     </tr></thead>
 <tbody class="gt_table_body">
 <tr>
@@ -2522,6 +2516,9 @@ p (1-sided)
 
 <p>Maximum alpha allocated: 0.001</p>
 <p>Nominal p-value for hypothesis test: 0.1</p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Restore default options</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span><span class="va">old</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 </div>
