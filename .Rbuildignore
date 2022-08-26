@@ -6,3 +6,4 @@
 ^LICENSES_THIRD_PARTY$
 ^LICENSE$
 ^\.github$
+^cran-comments\.md$

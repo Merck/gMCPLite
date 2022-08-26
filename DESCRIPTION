@@ -1,6 +1,6 @@
 Package: gMCPLite
 Title: Lightweight Graph Based Multiple Comparison Procedures
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Yalin", "Zhu", email = "yalin.zhu@merck.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-3830-8660")),
@@ -17,8 +17,11 @@ Authors@R: c(
     person("Merck & Co., Inc., Rahway, NJ, USA and its affiliates", role = "cph")
     )
 Description: A lightweight fork of 'gMCP' with functions for graphical
-    described multiple test procedures. Implements a flexible function
-    using 'ggplot2' to create multiplicity graph visualizations.
+    described multiple test procedures introduced in
+    Bretz et al. (2009) <doi:10.1002/sim.3495> and
+    Bretz et al. (2011) <doi:10.1002/bimj.201000239>.
+    Implements a flexible function using 'ggplot2' to create
+    multiplicity graph visualizations.
     Contains instructions of multiplicity graph and graphical testing for
     group sequential design, with necessary unit testing using 'testthat'.
 License: GPL-3
