@@ -13,7 +13,7 @@ passed on to the hypothesis corresponding to its column index), as \code{graphMC
 object or as \code{entangledMCP} object.}
 
 \item{w}{Vector of weights, defines how much of the overall alpha is
-initially reserved for each elementary hypthosis. Can be missing if \code{g}
+initially reserved for each elementary hypothesis. Can be missing if \code{g}
 is a \code{graphMCP} object (in which case the weights from the graph object are used).
 Will be ignored if \code{g} is an \code{entangledMCP} object (since then the matrix
 of weights from this object is used).}

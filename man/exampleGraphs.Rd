@@ -159,7 +159,7 @@ HungEtWang2010(nu=1)
 
 }
 \references{
-Holm, S. (1979). A simple sequentally rejective multiple test
+Holm, S. (1979). A simple sequentially rejective multiple test
 procedure. Scandinavian Journal of Statistics 6, 65-70.
 
 Dmitrienko, A., Offen, W., Westfall, P.H. (2003). Gatekeeping strategies for

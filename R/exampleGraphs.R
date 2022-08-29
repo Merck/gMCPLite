@@ -14,7 +14,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 #' Functions that create different example graphs
 #'
 #' Functions that creates example graphs, e.g. graphs that represents a
@@ -73,7 +73,7 @@
 #' @return A graph of class \code{graphMCP} that represents a
 #' sequentially rejective multiple test procedure.
 #' @author Kornelius Rohmeyer \email{rohmeyer@@small-projects.de}
-#' @references Holm, S. (1979). A simple sequentally rejective multiple test
+#' @references Holm, S. (1979). A simple sequentially rejective multiple test
 #' procedure. Scandinavian Journal of Statistics 6, 65-70.
 #'
 #' Dmitrienko, A., Offen, W., Westfall, P.H. (2003). Gatekeeping strategies for
@@ -161,7 +161,7 @@ BonferroniHolm <- function(n, weights=rep(1/n, n)) {
 			#"Most powerful test procedure (without further assumptions) that treats all hypotheses equally.",
 			"The graph is a complete graph, where all nodes have the same weights and each edge weight is 1/(n-1).",
 			"",
-			"Literature: Holm, S. (1979). A simple sequentally rejective multiple test procedure. Scandinavian Journal of Statistics 6, 65-70.", sep="\n")
+			"Literature: Holm, S. (1979). A simple sequentially rejective multiple test procedure. Scandinavian Journal of Statistics 6, 65-70.", sep="\n")
 	return(BonferroniHolm)
 }
 
