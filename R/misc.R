@@ -224,7 +224,7 @@ varcombs <- function(variables) {
 #' Build a block diagonal matrix with NA values outside the diagonal given
 #' several building block matrices.
 #'
-#' This function is usefull to build the correlation matrices, when only
+#' This function is useful to build the correlation matrices, when only
 #' partial knowledge of the correlation exists.
 #'
 #' @param ...  individual matrices or a \code{list} of matrices.

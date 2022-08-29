@@ -49,7 +49,7 @@ Use of `hGraph()` is organized as follows:
 # The basic graph layout
 
 We begin with the default plot to demonstrate the basic formatting below.
-Hypthoses and initial $\alpha$-allocation or weighting are presented in shaded ellipses with the first hyothesis specified in the upper-left part of the  plot.
+Hypotheses and initial $\alpha$-allocation or weighting are presented in shaded ellipses with the first hypothesis specified in the upper-left part of the  plot.
 While the user has full control of ellipse placement and color, the default is to present clockwise on a larger ellipse with gray shading.
 One advantage of default placement is that generally transition lines between hypotheses will not cross hypothesis ellipses, including when the graph is updated when some hypotheses are rejected.
 Transition weights between hypotheses are specified on directional lines between the hypothesis ellipses.
@@ -154,7 +154,7 @@ grid.arrange(
 
 Next, we add a legend.
 
-- The legend is added when the default of `legend.positon = "none"` is replaced. Here we use a custom position specifying the relative postioning on the (0,1) scale in the x- and y-range of the graph. Commonly used options are `"left"`, `"right"`, `"top"`, or '"bottom"`
+- The legend is added when the default of `legend.positon = "none"` is replaced. Here we use a custom position specifying the relative positioning on the (0,1) scale in the x- and y-range of the graph. Commonly used options are `"left"`, `"right"`, `"top"`, or '"bottom"`
 - `legend.name` (default is none) specifies a name for the legend
 - `labels` specifies labels corresponding to the `fill` parameter
 

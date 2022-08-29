@@ -17,7 +17,7 @@ Build a block diagonal matrix with NA values outside the diagonal given
 several building block matrices.
 }
 \details{
-This function is usefull to build the correlation matrices, when only
+This function is useful to build the correlation matrices, when only
 partial knowledge of the correlation exists.
 }
 \examples{

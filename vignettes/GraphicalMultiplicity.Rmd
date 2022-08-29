@@ -103,7 +103,7 @@ Most $\alpha$ is allocated to OS and the least to ORR, with PFS receiving an int
 This reflects the priority of the endpoints as well as the practicality to detect clinically significant differences in each population.
 Reallocation for each endpoint proceeds from the subgroup to the overall population.
 If the overall population hypothesis is rejected for a given endpoint, the reallocation is split between the two populations for another endpoint.
-The choice for allocation and reallocation illustrated here is to demonstrate a complex multiplicity scenario; when actually applying this method the allocation and realloation choices should be carefully considered.
+The choice for allocation and reallocation illustrated here is to demonstrate a complex multiplicity scenario; when actually applying this method the allocation and reallocation choices should be carefully considered.
 
 ```{r, warning=FALSE, message=FALSE}
 ### THIS CODE NEEDS TO BE MODIFIED FOR YOUR STUDY

@@ -100,7 +100,7 @@
 #' \describe{
 #' \item{\code{graphs}}{list of graphs}
 #' \item{\code{pvalues}}{p-values}
-#' \item{\code{rejected}}{logical whether hyptheses could be rejected}
+#' \item{\code{rejected}}{logical whether hypotheses could be rejected}
 #' \item{\code{adjPValues}}{adjusted p-values}
 #' }
 #' @author Kornelius Rohmeyer \email{rohmeyer@@small-projects.de}
