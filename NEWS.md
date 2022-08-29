@@ -1,3 +1,7 @@
+# gMCPLite 0.1.2
+
+- Added `docs` in .Rbuildignore.
+
 # gMCPLite 0.1.1
 
 ## Improvements
