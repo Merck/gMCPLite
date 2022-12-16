@@ -658,16 +658,35 @@ Note, in particular, that version 3.1 or later of the **gsDesign** package is ne
 ## References
 
 ```{js,echo=FALSE}
-// Temporary fix for dynamic tabsets code block rendering issue under pkgdown
+// Fix dynamic tabsets code block rendering issue under pkgdown
 (function () {
-    unstyled_code = document.querySelectorAll('button code');
+  // Fix the tweaked element class
+  unstyledCode = document.querySelectorAll("button code");
 
-    block0_old = unstyled_code[0].outerHTML;
-    block0_new = "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" + block0_old + "</pre>";
-    unstyled_code[0].outerHTML = block0_new;
+  // Quit if there are no elements matched (when not rendered by pkgdown)
+  if (!unstyledCode.length) {
+    return;
+  }
 
-    block1_old = unstyled_code[1].outerHTML;
-    block1_new = "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" + block1_old + "</pre>";
-    unstyled_code[1].outerHTML = block1_new;
+  for (let i = 0; i < unstyledCode.length; i++) {
+    blockOld = unstyledCode[i].outerHTML;
+    blockNew =
+      "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" +
+      blockOld +
+      "</pre>";
+    unstyledCode[i].outerHTML = blockNew;
+  }
+
+  // Activate the first real tab
+  var tabElements = [
+    "ul#multiplicity-graph-sequence-from-gmcplite li:nth-child(2) button",
+    "ul#bounds-at-final-alpha-allocated-for-group-sequential-tests li:nth-child(2) button",
+  ];
+
+  for (let i = 0; i < tabElements.length; i++) {
+    var el = document.querySelector(tabElements[i]);
+    var tab = new bootstrap.Tab(el);
+    tab.show();
+  }
 })();
 ```
