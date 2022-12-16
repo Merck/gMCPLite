@@ -17,7 +17,7 @@
 <link href="../deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="Multiplicity graphs">
 <meta property="og:description" content="gMCPLite">
 <meta property="og:image" content="https://merck.github.io/gMCPLite/logo.png">
@@ -92,8 +92,22 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>With <code>gsDesign</code> version 3.1, we have added a function to support graphical multiplicity methods using <strong><em><code>ggplot2</code></em></strong>, this function is migrated to the <code>gMCPLite</code> package now.</p>
-<p>The graphical method is introduced nicely in <span class="citation">Bretz et al. (2011)</span> and originally supported by the <strong><em><code>gMCP</code></em></strong> packages (<span class="citation">Rohmeyer and Klinglmueller (2020)</span>), and now <strong><em><code>gMCPLite</code></em></strong> package. It was extended to group sequential design by <span class="citation">Maurer and Bretz (2013)</span>. While the <strong><em><code>gMCPLite</code></em></strong> package supports graphics, here we add the <code><a href="../reference/hGraph.html">hGraph()</a></code> function to create multiplicity graphs using the <strong><em><code>ggplot2</code></em></strong> package as a convenience for those desiring this format. We demonstrate basic formatting in this article and demonstrate use with <strong><em><code>gMCPLite</code></em></strong> in the other article.</p>
+<p>With <code>gsDesign</code> version 3.1, we have added a function to
+support graphical multiplicity methods using
+<strong><em><code>ggplot2</code></em></strong>, this function is
+migrated to the <code>gMCPLite</code> package now.</p>
+<p>The graphical method is introduced nicely in <span class="citation">Bretz et al. (2011)</span> and originally supported by
+the <strong><em><code>gMCP</code></em></strong> packages (<span class="citation">Rohmeyer and Klinglmueller (2020)</span>), and now
+<strong><em><code>gMCPLite</code></em></strong> package. It was extended
+to group sequential design by <span class="citation">Maurer and Bretz
+(2013)</span>. While the <strong><em><code>gMCPLite</code></em></strong>
+package supports graphics, here we add the <code><a href="../reference/hGraph.html">hGraph()</a></code>
+function to create multiplicity graphs using the
+<strong><em><code>ggplot2</code></em></strong> package as a convenience
+for those desiring this format. We demonstrate basic formatting in this
+article and demonstrate use with
+<strong><em><code>gMCPLite</code></em></strong> in the other
+article.</p>
 <p>Use of <code><a href="../reference/hGraph.html">hGraph()</a></code> is organized as follows:</p>
 <ul>
 <li>The basic graph layout</li>
@@ -106,7 +120,20 @@
 <div class="section level2">
 <h2 id="the-basic-graph-layout">The basic graph layout<a class="anchor" aria-label="anchor" href="#the-basic-graph-layout"></a>
 </h2>
-<p>We begin with the default plot to demonstrate the basic formatting below. Hypotheses and initial <span class="math inline">\(\alpha\)</span>-allocation or weighting are presented in shaded ellipses with the first hypothesis specified in the upper-left part of the plot. While the user has full control of ellipse placement and color, the default is to present clockwise on a larger ellipse with gray shading. One advantage of default placement is that generally transition lines between hypotheses will not cross hypothesis ellipses, including when the graph is updated when some hypotheses are rejected. Transition weights between hypotheses are specified on directional lines between the hypothesis ellipses. Try this in a plot window. Note the effect if you change the size of the plot window. In a similar fashion, if you are using R Markdown, parameters like <code>fig.width</code>, <code>fig.height</code>, and <code>fig.asp</code> will affect formatting.</p>
+<p>We begin with the default plot to demonstrate the basic formatting
+below. Hypotheses and initial <span class="math inline">\(\alpha\)</span>-allocation or weighting are
+presented in shaded ellipses with the first hypothesis specified in the
+upper-left part of the plot. While the user has full control of ellipse
+placement and color, the default is to present clockwise on a larger
+ellipse with gray shading. One advantage of default placement is that
+generally transition lines between hypotheses will not cross hypothesis
+ellipses, including when the graph is updated when some hypotheses are
+rejected. Transition weights between hypotheses are specified on
+directional lines between the hypothesis ellipses. Try this in a plot
+window. Note the effect if you change the size of the plot window. In a
+similar fashion, if you are using R Markdown, parameters like
+<code>fig.width</code>, <code>fig.height</code>, and
+<code>fig.asp</code> will affect formatting.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/hGraph.html">hGraph</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="hGraph_files/figure-html/unnamed-chunk-3-1.png" width="80%" style="display: block; margin: auto;"></p>
@@ -114,7 +141,12 @@
 <div class="section level2">
 <h2 id="specifying-hypothesis-names-and-alpha-allocation">Specifying hypothesis names and <span class="math inline">\(\alpha\)</span>-allocation<a class="anchor" aria-label="anchor" href="#specifying-hypothesis-names-and-alpha-allocation"></a>
 </h2>
-<p>Next we specify the number of hypotheses, hypothesis names and <span class="math inline">\(\alpha\)</span>-allocation or weighting. Whereas the default plot above used <span class="math inline">\(\alpha\)</span>-allocation adding to 0.025, here we use weights adding to 1. Note the <code>\n</code> character used to insert a carriage return in hypothesis name text. The character used for weights (specified in <code>wchar</code>) is by default <span class="math inline">\(\alpha\)</span> under Windows and <code>w</code> otherwise. Note the clockwise placement of hypotheses.</p>
+<p>Next we specify the number of hypotheses, hypothesis names and <span class="math inline">\(\alpha\)</span>-allocation or weighting. Whereas
+the default plot above used <span class="math inline">\(\alpha\)</span>-allocation adding to 0.025, here
+we use weights adding to 1. Note the <code>\n</code> character used to
+insert a carriage return in hypothesis name text. The character used for
+weights (specified in <code>wchar</code>) is by default <span class="math inline">\(\alpha\)</span> under Windows and <code>w</code>
+otherwise. Note the clockwise placement of hypotheses.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/hGraph.html">hGraph</a></span><span class="op">(</span></span>
 <span>  nHypotheses <span class="op">=</span> <span class="fl">3</span>,</span>
@@ -129,30 +161,51 @@
 </h2>
 <p>You can specify location of hypothesis ellipses in two ways.</p>
 <ul>
-<li>For the first, specify in radians where on the large ellipse where the first hypothesis is placed. Setting <span class="math inline">\(\pi/2\)</span> for <code>radianStart</code> places the first hypothesis at the center and top of the plot (left plot).</li>
-<li>Specifying <code>x</code> and <code>y</code> coordinates, right graph, allows custom placement; note that the differences in minimum and maximum x- and y-values you use as well as window size will impact formatting.</li>
+<li>For the first, specify in radians where on the large ellipse where
+the first hypothesis is placed. Setting <span class="math inline">\(\pi/2\)</span> for <code>radianStart</code> places
+the first hypothesis at the center and top of the plot (left plot).</li>
+<li>Specifying <code>x</code> and <code>y</code> coordinates, right
+graph, allows custom placement; note that the differences in minimum and
+maximum x- and y-values you use as well as window size will impact
+formatting.</li>
 </ul>
-<p>Ellipse and the text size as well as maximum significant digits for hypotheses are controlled as follows:</p>
+<p>Ellipse and the text size as well as maximum significant digits for
+hypotheses are controlled as follows:</p>
 <ul>
-<li>Size of text in hypothesis ellipses is controlled by the <code>size</code> parameter (left graph). This text is always placed at the center of the ellipse with no user control.</li>
-<li>Size of ellipses is controlled by <code>halfWid</code> (left graph) and <code>halfHgt</code> (not shown; default 0.5) parameters.</li>
+<li>Size of text in hypothesis ellipses is controlled by the
+<code>size</code> parameter (left graph). This text is always placed at
+the center of the ellipse with no user control.</li>
+<li>Size of ellipses is controlled by <code>halfWid</code> (left graph)
+and <code>halfHgt</code> (not shown; default 0.5) parameters.</li>
 <li>
-<code>digits</code> specifies the maximum digits for the <span class="math inline">\(\alpha\)</span>-allocation (not shown here; default 5)</li>
+<code>digits</code> specifies the maximum digits for the <span class="math inline">\(\alpha\)</span>-allocation (not shown here;
+default 5)</li>
 </ul>
-<p>Box and text size as well as maximum significant digit display for transition weights are controlled as follows:</p>
+<p>Box and text size as well as maximum significant digit display for
+transition weights are controlled as follows:</p>
 <ul>
 <li>
-<code>boxtextsize</code> (right graph) controls text size for transition weights</li>
+<code>boxtextsize</code> (right graph) controls text size for
+transition weights</li>
 <li>
-<code>trhw</code> (left graph) controls half-width for transition box size</li>
+<code>trhw</code> (left graph) controls half-width for transition
+box size</li>
 <li>
-<code>trhh</code> (not shown; default 0.075) controls half-height for transition box size</li>
+<code>trhh</code> (not shown; default 0.075) controls half-height
+for transition box size</li>
 <li>
-<code>trprop</code> (right graph) specifies the proportional placement of transition weight boxes along the transition lines At present, this is the same for all transitions</li>
+<code>trprop</code> (right graph) specifies the proportional
+placement of transition weight boxes along the transition lines At
+present, this is the same for all transitions</li>
 <li>
-<code>arrowsize</code> (left plot) controls the size of the arrows between ellipses</li>
+<code>arrowsize</code> (left plot) controls the size of the arrows
+between ellipses</li>
 </ul>
-<p>The other parameter shown here is <code>offset</code> (left graph). This is in radians; it increases and decreases offset of transition lines between hypothesis ellipses. If there are not any transition arrows in both directions between any pair of hypotheses, <code>offset = 0</code> is a reasonable option.</p>
+<p>The other parameter shown here is <code>offset</code> (left graph).
+This is in radians; it increases and decreases offset of transition
+lines between hypothesis ellipses. If there are not any transition
+arrows in both directions between any pair of hypotheses,
+<code>offset = 0</code> is a reasonable option.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">grid.arrange</span><span class="op">(</span></span>
 <span>  <span class="co"># Left graph in figure</span></span>
@@ -181,10 +234,14 @@
 <div class="section level2">
 <h2 id="using-colors-and-legends">Using colors and legends<a class="anchor" aria-label="anchor" href="#using-colors-and-legends"></a>
 </h2>
-<p>The default color palette for ellipse shading is monochrome (left plot below). To limit the parameters used, we have not adjusted text, ellipse and box size as above. Colors are specified as follows:</p>
+<p>The default color palette for ellipse shading is monochrome (left
+plot below). To limit the parameters used, we have not adjusted text,
+ellipse and box size as above. Colors are specified as follows:</p>
 <ul>
-<li>A <code>fill</code> color category; here we group the first 2 hypotheses and last 2 hypotheses (both graphs)</li>
-<li>The <code>palette</code> specifies a palette for the colors (right graph)</li>
+<li>A <code>fill</code> color category; here we group the first 2
+hypotheses and last 2 hypotheses (both graphs)</li>
+<li>The <code>palette</code> specifies a palette for the colors (right
+graph)</li>
 </ul>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">grid.arrange</span><span class="op">(</span></span>
@@ -204,11 +261,18 @@
 <p><img src="hGraph_files/figure-html/unnamed-chunk-6-1.png" width="80%" style="display: block; margin: auto;"></p>
 <p>Next, we add a legend.</p>
 <ul>
-<li>The legend is added when the default of <code>legend.positon = "none"</code> is replaced. Here we use a custom position specifying the relative positioning on the (0,1) scale in the x- and y-range of the graph. Commonly used options are <code>"left"</code>, <code>"right"</code>, <code>"top"</code>, or ’“bottom”`</li>
+<li>The legend is added when the default of
+<code>legend.positon = "none"</code> is replaced. Here we use a custom
+position specifying the relative positioning on the (0,1) scale in the
+x- and y-range of the graph. Commonly used options are
+<code>"left"</code>, <code>"right"</code>, <code>"top"</code>, or
+’“bottom”`</li>
 <li>
-<code>legend.name</code> (default is none) specifies a name for the legend</li>
+<code>legend.name</code> (default is none) specifies a name for the
+legend</li>
 <li>
-<code>labels</code> specifies labels corresponding to the <code>fill</code> parameter</li>
+<code>labels</code> specifies labels corresponding to the
+<code>fill</code> parameter</li>
 </ul>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/hGraph.html">hGraph</a></span><span class="op">(</span></span>
@@ -224,7 +288,13 @@
 <div class="section level2">
 <h2 id="specifying-the-transition-matrix-between-hypotheses">Specifying the transition matrix between hypotheses<a class="anchor" aria-label="anchor" href="#specifying-the-transition-matrix-between-hypotheses"></a>
 </h2>
-<p>Transition weights are specified in matrix format in the variable <code>m</code>. The matrix must be square of dimension <code>nHypotheses</code> and have 0 on the diagonal. Rows represent the hypotheses from which transitions start; row values should sum to 1. Columns represent the hypotheses to which transition arrows go. Any transition weight of 0 has no corresponding transition line in the figure.</p>
+<p>Transition weights are specified in matrix format in the variable
+<code>m</code>. The matrix must be square of dimension
+<code>nHypotheses</code> and have 0 on the diagonal. Rows represent the
+hypotheses from which transitions start; row values should sum to 1.
+Columns represent the hypotheses to which transition arrows go. Any
+transition weight of 0 has no corresponding transition line in the
+figure.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/hGraph.html">hGraph</a></span><span class="op">(</span></span>
 <span>  nHypotheses <span class="op">=</span> <span class="fl">3</span>,</span>
@@ -243,13 +313,19 @@
 </h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Bretz2011" class="csl-entry">
-Bretz, Frank, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, Willi Maurer, and Kornelius Rohmeyer. 2011. <span>“Graphical Approaches for Multiple Comparison Procedures Using Weighted Bonferroni, Simes or Parametric Tests.”</span> <em>Biometrical Journal</em> 53 (6): 894–913.
+Bretz, Frank, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, Willi
+Maurer, and Kornelius Rohmeyer. 2011. <span>“Graphical Approaches for
+Multiple Comparison Procedures Using Weighted Bonferroni, Simes or
+Parametric Tests.”</span> <em>Biometrical Journal</em> 53 (6): 894–913.
 </div>
 <div id="ref-MaurerBretz2013" class="csl-entry">
-Maurer, Willi, and Frank Bretz. 2013. <span>“Multiple Testing in Group Sequential Trials Using Graphical Approaches.”</span> <em>Statistics in Biopharmaceutical Research</em> 5: 311–20.
+Maurer, Willi, and Frank Bretz. 2013. <span>“Multiple Testing in Group
+Sequential Trials Using Graphical Approaches.”</span> <em>Statistics in
+Biopharmaceutical Research</em> 5: 311–20.
 </div>
 <div id="ref-gMCP" class="csl-entry">
-Rohmeyer, Kornelius, and Florian Klinglmueller. 2020. <em><span class="nocase">gMCP</span>: Graph Based Multiple Test Procedures</em>. <a href="https://cran.r-project.org/package=gMCP" class="external-link">https://cran.r-project.org/package=gMCP</a>.
+Rohmeyer, Kornelius, and Florian Klinglmueller. 2020. <em><span class="nocase">gMCP</span>: Graph Based Multiple Test Procedures</em>.
+<a href="https://cran.r-project.org/package=gMCP" class="external-link">https://cran.r-project.org/package=gMCP</a>.
 </div>
 </div>
 </div>
@@ -261,7 +337,7 @@ Rohmeyer, Kornelius, and Florian Klinglmueller. 2020. <em><span class="nocase">g
 
     <footer><div class="pkgdown-footer-left">
   <p></p>
-<p>Developed by Yalin Zhu, Yilong Zhang, Xuan Deng, Keaven Anderson, Nan Xiao. Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6. <br>Copyright © 2022 Merck &amp; Co., Inc., Rahway, NJ, USA and its affiliates. All rights reserved.</p>
+<p>Developed by Yalin Zhu, Yilong Zhang, Xuan Deng, Keaven Anderson, Nan Xiao. Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7. <br>Copyright © 2022 Merck &amp; Co., Inc., Rahway, NJ, USA and its affiliates. All rights reserved.</p>
 </div>
 
 <div class="pkgdown-footer-right">

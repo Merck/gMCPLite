@@ -17,7 +17,7 @@
 <link href="../deps/bootstrap-5.1.3/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.1.3/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.rawgit.com/afeld/bootstrap-toc/v1.0.1/dist/bootstrap-toc.min.js"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="Graphical testing for group sequential design">
 <meta property="og:description" content="gMCPLite">
 <meta property="og:image" content="https://merck.github.io/gMCPLite/logo.png">
@@ -92,20 +92,48 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>This document is intended to evaluate statistical significance for graphical multiplicity control when used with group sequential design <span class="citation">(Maurer and Bretz 2013)</span>. In particular, we demonstrate design and analysis of a complex oncology trial. There are many details building on the necessarily simple example provided by <span class="citation">Maurer and Bretz (2013)</span>. The combination of tools provided by the <strong>gMCPLite</strong> and <strong>gsDesign</strong> packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion. This has been found to be particularly valuable to provide a prompt and verifiable conclusion in multiple trials such as <span class="citation">Burtness et al. (2019)</span> where 14 hypotheses were evaluated using a template such as this.</p>
-<p>Given the complexity involved, substantial effort has been taken to provide methods to check hypothesis testing.</p>
+<p>This document is intended to evaluate statistical significance for
+graphical multiplicity control when used with group sequential design
+<span class="citation">(Maurer and Bretz 2013)</span>. In particular, we
+demonstrate design and analysis of a complex oncology trial. There are
+many details building on the necessarily simple example provided by
+<span class="citation">Maurer and Bretz (2013)</span>. The combination
+of tools provided by the <strong>gMCPLite</strong> and
+<strong>gsDesign</strong> packages is non-trivial, but developed in a
+way that is meant to be re-used in a straightforward fashion. This has
+been found to be particularly valuable to provide a prompt and
+verifiable conclusion in multiple trials such as <span class="citation">Burtness et al. (2019)</span> where 14 hypotheses were
+evaluated using a template such as this.</p>
+<p>Given the complexity involved, substantial effort has been taken to
+provide methods to check hypothesis testing.</p>
 <ul>
-<li>The initial testing is done by using sequential p-values <span class="citation">(Liu and Anderson 2008)</span> which can then be plugged into standard graphical hypothesis testing R package, <strong>gMCP</strong> <span class="citation">(Bretz, Maurer, and Posch 2009)</span>.</li>
-<li>The graphical testing produces a sequence including the original multiplicity graph, followed by updated multiplicity graphs, each with a single hypothesis rejected from the previous graph.</li>
-<li>The final graph, assuming not all hypotheses were rejected, provides the final Type I error available for testing each hypothesis that was not rejected.</li>
-<li>Updated group sequential bounds for each hypothesis at the largest alpha-level it was evaluated can be checked vs. nominal p-values at each analysis to verify the testing conclusions reached with the above methods.</li>
+<li>The initial testing is done by using sequential p-values <span class="citation">(Liu and Anderson 2008)</span> which can then be
+plugged into standard graphical hypothesis testing R package,
+<strong>gMCP</strong> <span class="citation">(Bretz, Maurer, and Posch
+2009)</span>.</li>
+<li>The graphical testing produces a sequence including the original
+multiplicity graph, followed by updated multiplicity graphs, each with a
+single hypothesis rejected from the previous graph.</li>
+<li>The final graph, assuming not all hypotheses were rejected, provides
+the final Type I error available for testing each hypothesis that was
+not rejected.</li>
+<li>Updated group sequential bounds for each hypothesis at the largest
+alpha-level it was evaluated can be checked vs. nominal p-values at each
+analysis to verify the testing conclusions reached with the above
+methods.</li>
 </ul>
-<p>The table of contents above lays out the organization of the document. In short, we begin with 1) design specification followed by 2) results entry which includes event counts and nominal p-values for testing, 3) carrying out hypothesis testing, and 4) verification of the hypothesis testing results.</p>
+<p>The table of contents above lays out the organization of the
+document. In short, we begin with 1) design specification followed by 2)
+results entry which includes event counts and nominal p-values for
+testing, 3) carrying out hypothesis testing, and 4) verification of the
+hypothesis testing results.</p>
 </div>
 <div class="section level2">
 <h2 id="design">Design<a class="anchor" aria-label="anchor" href="#design"></a>
 </h2>
-<p>For the template example, there are 3 endpoints and 2 populations resulting in 6 hypotheses to be tested in the trial. The endpoints are:</p>
+<p>For the template example, there are 3 endpoints and 2 populations
+resulting in 6 hypotheses to be tested in the trial. The endpoints
+are:</p>
 <ul>
 <li>Overall survival (OS)</li>
 <li>Progression free survival (PFS)</li>
@@ -116,16 +144,53 @@
 <li>The overall population (All subjects)</li>
 <li>A subgroup (Subgroup)</li>
 </ul>
-<p>For simplicity, we design assuming the control group has an exponential time to event with a median of 12 months for OS and 5 months for PFS. We design under a proportional hazards assumption. ORR for the control group is assumed to be 15%. Some of the choices here are arbitrary, but the intent is to fully specify how patients will be enrolled and followed for <span class="math inline">\(\alpha\)</span>-controlled study analyses.</p>
-<p>The following design characteristics are also specified to well-characterize outcomes for all subjects by the end of the trial:</p>
+<p>For simplicity, we design assuming the control group has an
+exponential time to event with a median of 12 months for OS and 5 months
+for PFS. We design under a proportional hazards assumption. ORR for the
+control group is assumed to be 15%. Some of the choices here are
+arbitrary, but the intent is to fully specify how patients will be
+enrolled and followed for <span class="math inline">\(\alpha\)</span>-controlled study analyses.</p>
+<p>The following design characteristics are also specified to
+well-characterize outcomes for all subjects by the end of the trial:</p>
 <ul>
-<li>Enrollment is assumed to occur over 18 months. Enrollment will continue until the targeted number of subjects has been enrolled in the subgroup to ensure power as planned for that population. This means, the overall population sample size will be random and power may vary from that planned here. The enrollment increases from 25% in the first two months to 50% in the second 2 months to 75% in the third two months of the final steady state enrollment which continues from the end of month 6 of enrollment until final enrollment expected at 18 months.</li>
-<li>The first interim analysis will be conducted 6 months after final patient enrolled to adequately assess ORR for all patients. Thus, the analysis is planned at 24 months after start of study enrollment, but will be adapted according to when final enrollment is completed. This is the only analysis for ORR and is an interim analysis for PFS and OS with whatever event counts are available at the cutoff.</li>
-<li>The second interim analysis will be conducted 14 months after final enrollment to ensure minimum follow-up almost 3 times the assumed control median PFS for all subjects. This would be delayed up to 3 months if the final targeted event count for PFS in the subgroup is not achieved at that time. This is to ensure a complete description of tail behavior for PFS in the case a PFS curve has a plateau. PFS and OS will be analyzed. The endpoint counts for OS and for the overall population for PFS are random since the cutoff is determined by the PFS endpoint count for the subgroup.</li>
-<li>The final analysis will be performed 24 months after final enrollment, ensuring 2 times the assumed median control survival as minimum follow-up for all subjects. Only analysis of OS is planned. The final analysis may be delayed up to 6 months if the targeted OS event count in the subgroup is not achieved. Thus, the planned total duration of the trial for the OS endpoint is 42 months.</li>
+<li>Enrollment is assumed to occur over 18 months. Enrollment will
+continue until the targeted number of subjects has been enrolled in the
+subgroup to ensure power as planned for that population. This means, the
+overall population sample size will be random and power may vary from
+that planned here. The enrollment increases from 25% in the first two
+months to 50% in the second 2 months to 75% in the third two months of
+the final steady state enrollment which continues from the end of month
+6 of enrollment until final enrollment expected at 18 months.</li>
+<li>The first interim analysis will be conducted 6 months after final
+patient enrolled to adequately assess ORR for all patients. Thus, the
+analysis is planned at 24 months after start of study enrollment, but
+will be adapted according to when final enrollment is completed. This is
+the only analysis for ORR and is an interim analysis for PFS and OS with
+whatever event counts are available at the cutoff.</li>
+<li>The second interim analysis will be conducted 14 months after final
+enrollment to ensure minimum follow-up almost 3 times the assumed
+control median PFS for all subjects. This would be delayed up to 3
+months if the final targeted event count for PFS in the subgroup is not
+achieved at that time. This is to ensure a complete description of tail
+behavior for PFS in the case a PFS curve has a plateau. PFS and OS will
+be analyzed. The endpoint counts for OS and for the overall population
+for PFS are random since the cutoff is determined by the PFS endpoint
+count for the subgroup.</li>
+<li>The final analysis will be performed 24 months after final
+enrollment, ensuring 2 times the assumed median control survival as
+minimum follow-up for all subjects. Only analysis of OS is planned. The
+final analysis may be delayed up to 6 months if the targeted OS event
+count in the subgroup is not achieved. Thus, the planned total duration
+of the trial for the OS endpoint is 42 months.</li>
 </ul>
-<p>The sample size for the trial will be driven by an adequate sample size and targeted events in the subgroup to ensure 90% power for the OS endpoint assuming a hazard ratio of 0.65. For group sequential designs, we assume 1-sided testing.</p>
-<p>To reveal code blocks for the remainder of the document, press the code buttons indicated throughout. The initial code block sets options and loads needed packages; no modification should be required by the user.</p>
+<p>The sample size for the trial will be driven by an adequate sample
+size and targeted events in the subgroup to ensure 90% power for the OS
+endpoint assuming a hazard ratio of 0.65. For group sequential designs,
+we assume 1-sided testing.</p>
+<p>To reveal code blocks for the remainder of the document, press the
+code buttons indicated throughout. The initial code block sets options
+and loads needed packages; no modification should be required by the
+user.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION</span></span>
 <span><span class="co"># Prefer fixed notation</span></span>
@@ -145,7 +210,19 @@
 <div class="section level3">
 <h3 id="multiplicity-diagram-for-hypothesis-testing">Multiplicity diagram for hypothesis testing<a class="anchor" aria-label="anchor" href="#multiplicity-diagram-for-hypothesis-testing"></a>
 </h3>
-<p>Following is the multiplicity graph for the trial design. We have arbitrarily split Type I error equally between the subgroup and overall populations. Most <span class="math inline">\(\alpha\)</span> is allocated to OS and the least to ORR, with PFS receiving an intermediate amount. This reflects the priority of the endpoints as well as the practicality to detect clinically significant differences in each population. Reallocation for each endpoint proceeds from the subgroup to the overall population. If the overall population hypothesis is rejected for a given endpoint, the reallocation is split between the two populations for another endpoint. The choice for allocation and reallocation illustrated here is to demonstrate a complex multiplicity scenario; when actually applying this method the allocation and reallocation choices should be carefully considered.</p>
+<p>Following is the multiplicity graph for the trial design. We have
+arbitrarily split Type I error equally between the subgroup and overall
+populations. Most <span class="math inline">\(\alpha\)</span> is
+allocated to OS and the least to ORR, with PFS receiving an intermediate
+amount. This reflects the priority of the endpoints as well as the
+practicality to detect clinically significant differences in each
+population. Reallocation for each endpoint proceeds from the subgroup to
+the overall population. If the overall population hypothesis is rejected
+for a given endpoint, the reallocation is split between the two
+populations for another endpoint. The choice for allocation and
+reallocation illustrated here is to demonstrate a complex multiplicity
+scenario; when actually applying this method the allocation and
+reallocation choices should be carefully considered.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### THIS CODE NEEDS TO BE MODIFIED FOR YOUR STUDY</span></span>
 <span><span class="co"># If needed, see help file for gMCPLite::hGraph() for explanation of parameters below</span></span>
@@ -182,13 +259,36 @@
 <span><span class="op">)</span> </span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span></span></code></pre></div>
 <p><img src="GraphicalMultiplicity_files/figure-html/unnamed-chunk-3-1.png" width="80%" style="display: block; margin: auto;"></p>
-<p>This testing scheme can result in what might be referred to as time travel for passing of <span class="math inline">\(\alpha\)</span>. That is, if PFS hypotheses are not rejected at a given analysis (say final PFS analysis) and OS hypotheses are rejected at the final analysis, then the previously evaluated PFS tests at the interim and final PFS analysis can be compared to updated bounds based on reallocated Type I error. While this practice was not encouraged by <span class="citation">Maurer and Bretz (2013)</span>, it was acknowledged to control Type I error as previous discussed in <span class="citation">(Liu and Anderson 2008)</span>. Given the stringent Type I error control for multiple hypotheses, the ability to acknowledge clinically significant differences as statistically significant can be important in describing treatment benefits in regulatory labeling for a treatment.</p>
+<p>This testing scheme can result in what might be referred to as time
+travel for passing of <span class="math inline">\(\alpha\)</span>. That
+is, if PFS hypotheses are not rejected at a given analysis (say final
+PFS analysis) and OS hypotheses are rejected at the final analysis, then
+the previously evaluated PFS tests at the interim and final PFS analysis
+can be compared to updated bounds based on reallocated Type I error.
+While this practice was not encouraged by <span class="citation">Maurer
+and Bretz (2013)</span>, it was acknowledged to control Type I error as
+previous discussed in <span class="citation">(Liu and Anderson
+2008)</span>. Given the stringent Type I error control for multiple
+hypotheses, the ability to acknowledge clinically significant
+differences as statistically significant can be important in describing
+treatment benefits in regulatory labeling for a treatment.</p>
 </div>
 <div class="section level3 tabset">
 <h3 class="tabset" id="group-sequential-designs-for-each-hypothesis">Group sequential designs for each hypothesis<a class="anchor" aria-label="anchor" href="#group-sequential-designs-for-each-hypothesis"></a>
 </h3>
-<p>For the example, we assume 1-sided testing or a non-binding futility bound as required for a <span class="citation">Maurer and Bretz (2013)</span> design using group sequential design with graphical multiplicity control. Each is demonstrated in the example code for respective hypotheses. Efficacy <span class="math inline">\(\alpha\)</span>-spending for all group sequential designs uses the <span class="citation">Lan and DeMets (1983)</span> spending function approximating an O’Brien-Fleming bound.</p>
-<p>This section needs to be modified by the user to match the study design under consideration. Those uncomfortable with coding may wish to design using the <a href="https://gsdesign.shinyapps.io/prod/" class="external-link">gsDesign Shiny app</a> which provides not only a point and click interface, but also a code tab that generates R code that can be copied and plugged in for designs below.</p>
+<p>For the example, we assume 1-sided testing or a non-binding futility
+bound as required for a <span class="citation">Maurer and Bretz
+(2013)</span> design using group sequential design with graphical
+multiplicity control. Each is demonstrated in the example code for
+respective hypotheses. Efficacy <span class="math inline">\(\alpha\)</span>-spending for all group sequential
+designs uses the <span class="citation">Lan and DeMets (1983)</span>
+spending function approximating an O’Brien-Fleming bound.</p>
+<p>This section needs to be modified by the user to match the study
+design under consideration. Those uncomfortable with coding may wish to
+design using the <a href="https://gsdesign.shinyapps.io/prod/" class="external-link">gsDesign
+Shiny app</a> which provides not only a point and click interface, but
+also a code tab that generates R code that can be copied and plugged in
+for designs below.</p>
 
 
 
@@ -204,7 +304,10 @@
 <div class="tab-content">
 <div class="active  tab-pane" id="h1-os-subgroup" role="tabpanel" aria-labelledby="h1-os-subgroup-tab">
 
-<p>We assume 50% of the population is in the subgroup of interest. A sample size of 378 is driven by overall survival (OS) in the subgroup where we assume a hazard ratio of 0.65. Here we assume a one-sided group sequential design with no futility bound.</p>
+<p>We assume 50% of the population is in the subgroup of interest. A
+sample size of 378 is driven by overall survival (OS) in the subgroup
+where we assume a hazard ratio of 0.65. Here we assume a one-sided group
+sequential design with no futility bound.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">osmedian</span> <span class="op">&lt;-</span> <span class="fl">12</span> <span class="co"># Median control survival</span></span>
 <span><span class="co"># Derive group sequential design for OS in the targeted subgroup</span></span>
@@ -226,8 +329,15 @@
 <span><span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu">gsDesign</span><span class="fu">::</span><span class="fu"><a href="https://keaven.github.io/gsDesign/reference/gsBoundSummary.html" class="external-link">gsBoundSummary</a></span><span class="op">(</span><span class="va">ossub</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">tab</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">tab</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ossub</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>One-sided group sequential design with 3 analyses, time-to-event outcome with sample size 378 and 284 events required, 90 percent power, 1 percent (1-sided) Type I error to detect a hazard ratio of 0.65. Enrollment and total study durations are assumed to be 18 and 42 months, respectively. Efficacy bounds derived using a Lan-DeMets O’Brien-Fleming approximation spending function with none = 1.</p>
-<p>The above text was automatically generated and could be edited appropriately for description of the design. Following is a summary table describing study bounds.</p>
+<p>One-sided group sequential design with 3 analyses, time-to-event
+outcome with sample size 378 and 284 events required, 90 percent power,
+1 percent (1-sided) Type I error to detect a hazard ratio of 0.65.
+Enrollment and total study durations are assumed to be 18 and 42 months,
+respectively. Efficacy bounds derived using a Lan-DeMets O’Brien-Fleming
+approximation spending function with none = 1.</p>
+<p>The above text was automatically generated and could be edited
+appropriately for description of the design. Following is a summary
+table describing study bounds.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># tab %&gt;% kable(caption = "Design for OS in the subgroup.") %&gt;% kable_styling()</span></span>
 <span><span class="va">tab</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -242,12 +352,12 @@
 <span>    footnote <span class="op">=</span> <span class="st">"Approximate hazard ratio at bound."</span>,</span>
 <span>    locations <span class="op">=</span> <span class="fu"><a href="https://gt.rstudio.com/reference/cells_body.html" class="external-link">cells_body</a></span><span class="op">(</span>columns <span class="op">=</span> <span class="st">"Value"</span>, rows <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<div id="yackwwlphb" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="dkquhcmbdy" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#yackwwlphb .gt_table {
+#dkquhcmbdy .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -272,7 +382,7 @@
   border-left-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_heading {
+#dkquhcmbdy .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -284,7 +394,12 @@
   border-right-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_title {
+#dkquhcmbdy .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#dkquhcmbdy .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -296,7 +411,7 @@
   border-bottom-width: 0;
 }
 
-#yackwwlphb .gt_subtitle {
+#dkquhcmbdy .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -308,13 +423,13 @@
   border-top-width: 0;
 }
 
-#yackwwlphb .gt_bottom_border {
+#dkquhcmbdy .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_col_headings {
+#dkquhcmbdy .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -329,7 +444,7 @@
   border-right-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_col_heading {
+#dkquhcmbdy .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -349,7 +464,7 @@
   overflow-x: hidden;
 }
 
-#yackwwlphb .gt_column_spanner_outer {
+#dkquhcmbdy .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -361,15 +476,15 @@
   padding-right: 4px;
 }
 
-#yackwwlphb .gt_column_spanner_outer:first-child {
+#dkquhcmbdy .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#yackwwlphb .gt_column_spanner_outer:last-child {
+#dkquhcmbdy .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#yackwwlphb .gt_column_spanner {
+#dkquhcmbdy .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -381,7 +496,7 @@
   width: 100%;
 }
 
-#yackwwlphb .gt_group_heading {
+#dkquhcmbdy .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -404,9 +519,10 @@
   border-right-width: 1px;
   border-right-color: #D3D3D3;
   vertical-align: middle;
+  text-align: left;
 }
 
-#yackwwlphb .gt_empty_group_heading {
+#dkquhcmbdy .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -421,15 +537,15 @@
   vertical-align: middle;
 }
 
-#yackwwlphb .gt_from_md > :first-child {
+#dkquhcmbdy .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#yackwwlphb .gt_from_md > :last-child {
+#dkquhcmbdy .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#yackwwlphb .gt_row {
+#dkquhcmbdy .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -448,7 +564,7 @@
   overflow-x: hidden;
 }
 
-#yackwwlphb .gt_stub {
+#dkquhcmbdy .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -461,7 +577,7 @@
   padding-right: 5px;
 }
 
-#yackwwlphb .gt_stub_row_group {
+#dkquhcmbdy .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -475,11 +591,11 @@
   vertical-align: top;
 }
 
-#yackwwlphb .gt_row_group_first td {
+#dkquhcmbdy .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#yackwwlphb .gt_summary_row {
+#dkquhcmbdy .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -489,16 +605,16 @@
   padding-right: 5px;
 }
 
-#yackwwlphb .gt_first_summary_row {
+#dkquhcmbdy .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_first_summary_row.thick {
+#dkquhcmbdy .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#yackwwlphb .gt_last_summary_row {
+#dkquhcmbdy .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -508,7 +624,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_grand_summary_row {
+#dkquhcmbdy .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -518,7 +634,7 @@
   padding-right: 5px;
 }
 
-#yackwwlphb .gt_first_grand_summary_row {
+#dkquhcmbdy .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -528,11 +644,11 @@
   border-top-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_striped {
+#dkquhcmbdy .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#yackwwlphb .gt_table_body {
+#dkquhcmbdy .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -541,7 +657,7 @@
   border-bottom-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_footnotes {
+#dkquhcmbdy .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -555,7 +671,7 @@
   border-right-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_footnote {
+#dkquhcmbdy .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-left: 4px;
@@ -564,7 +680,7 @@
   padding-right: 5px;
 }
 
-#yackwwlphb .gt_sourcenotes {
+#dkquhcmbdy .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -578,7 +694,7 @@
   border-right-color: #D3D3D3;
 }
 
-#yackwwlphb .gt_sourcenote {
+#dkquhcmbdy .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -586,64 +702,64 @@
   padding-right: 5px;
 }
 
-#yackwwlphb .gt_left {
+#dkquhcmbdy .gt_left {
   text-align: left;
 }
 
-#yackwwlphb .gt_center {
+#dkquhcmbdy .gt_center {
   text-align: center;
 }
 
-#yackwwlphb .gt_right {
+#dkquhcmbdy .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#yackwwlphb .gt_font_normal {
+#dkquhcmbdy .gt_font_normal {
   font-weight: normal;
 }
 
-#yackwwlphb .gt_font_bold {
+#dkquhcmbdy .gt_font_bold {
   font-weight: bold;
 }
 
-#yackwwlphb .gt_font_italic {
+#dkquhcmbdy .gt_font_italic {
   font-style: italic;
 }
 
-#yackwwlphb .gt_super {
+#dkquhcmbdy .gt_super {
   font-size: 65%;
 }
 
-#yackwwlphb .gt_footnote_marks {
+#dkquhcmbdy .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 75%;
   vertical-align: 0.4em;
 }
 
-#yackwwlphb .gt_asterisk {
+#dkquhcmbdy .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#yackwwlphb .gt_indent_1 {
+#dkquhcmbdy .gt_indent_1 {
   text-indent: 5px;
 }
 
-#yackwwlphb .gt_indent_2 {
+#dkquhcmbdy .gt_indent_2 {
   text-indent: 10px;
 }
 
-#yackwwlphb .gt_indent_3 {
+#dkquhcmbdy .gt_indent_3 {
   text-indent: 15px;
 }
 
-#yackwwlphb .gt_indent_4 {
+#dkquhcmbdy .gt_indent_4 {
   text-indent: 20px;
 }
 
-#yackwwlphb .gt_indent_5 {
+#dkquhcmbdy .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -652,92 +768,92 @@
 <td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Design for OS in the Subgroup</td>
     </tr></thead>
 <thead class="gt_col_headings"><tr>
-<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col">Analysis</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col">Value</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col">Efficacy</th>
+<th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Analysis">Analysis</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Value">Value</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Efficacy">Efficacy</th>
     </tr></thead>
 <tbody class="gt_table_body">
 <tr>
-<td class="gt_row gt_left">IA 1: 61%</td>
-<td class="gt_row gt_left">Z</td>
-<td class="gt_row gt_right">3.0981</td>
+<td headers="Analysis" class="gt_row gt_left">IA 1: 61%</td>
+<td headers="Value" class="gt_row gt_left">Z</td>
+<td headers="Efficacy" class="gt_row gt_right">3.0981</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">N: 378</td>
-<td class="gt_row gt_left">p (1-sided)</td>
-<td class="gt_row gt_right">0.0010</td>
+<td headers="Analysis" class="gt_row gt_left">N: 378</td>
+<td headers="Value" class="gt_row gt_left">p (1-sided)</td>
+<td headers="Efficacy" class="gt_row gt_right">0.0010</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">Events: 173</td>
-<td class="gt_row gt_left">~HR at bound<sup class="gt_footnote_marks">1</sup>
+<td headers="Analysis" class="gt_row gt_left">Events: 173</td>
+<td headers="Value" class="gt_row gt_left">~HR at bound<sup class="gt_footnote_marks">1</sup>
 </td>
-<td class="gt_row gt_right">0.6243</td>
+<td headers="Efficacy" class="gt_row gt_right">0.6243</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">Month: 24</td>
-<td class="gt_row gt_left">P(Cross) if HR=1</td>
-<td class="gt_row gt_right">0.0010</td>
+<td headers="Analysis" class="gt_row gt_left">Month: 24</td>
+<td headers="Value" class="gt_row gt_left">P(Cross) if HR=1</td>
+<td headers="Efficacy" class="gt_row gt_right">0.0010</td>
 </tr>
 <tr>
-<td class="gt_row gt_left"></td>
-<td class="gt_row gt_left">P(Cross) if HR=0.65</td>
-<td class="gt_row gt_right">0.3986</td>
+<td headers="Analysis" class="gt_row gt_left"></td>
+<td headers="Value" class="gt_row gt_left">P(Cross) if HR=0.65</td>
+<td headers="Efficacy" class="gt_row gt_right">0.3986</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">IA 2: 82%</td>
-<td class="gt_row gt_left">Z</td>
-<td class="gt_row gt_right">2.6404</td>
+<td headers="Analysis" class="gt_row gt_left">IA 2: 82%</td>
+<td headers="Value" class="gt_row gt_left">Z</td>
+<td headers="Efficacy" class="gt_row gt_right">2.6404</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">N: 378</td>
-<td class="gt_row gt_left">p (1-sided)</td>
-<td class="gt_row gt_right">0.0041</td>
+<td headers="Analysis" class="gt_row gt_left">N: 378</td>
+<td headers="Value" class="gt_row gt_left">p (1-sided)</td>
+<td headers="Efficacy" class="gt_row gt_right">0.0041</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">Events: 233</td>
-<td class="gt_row gt_left">~HR at bound<sup class="gt_footnote_marks">1</sup>
+<td headers="Analysis" class="gt_row gt_left">Events: 233</td>
+<td headers="Value" class="gt_row gt_left">~HR at bound<sup class="gt_footnote_marks">1</sup>
 </td>
-<td class="gt_row gt_right">0.7073</td>
+<td headers="Efficacy" class="gt_row gt_right">0.7073</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">Month: 32</td>
-<td class="gt_row gt_left">P(Cross) if HR=1<sup class="gt_footnote_marks">2</sup>
+<td headers="Analysis" class="gt_row gt_left">Month: 32</td>
+<td headers="Value" class="gt_row gt_left">P(Cross) if HR=1<sup class="gt_footnote_marks">2</sup>
 </td>
-<td class="gt_row gt_right">0.0044</td>
+<td headers="Efficacy" class="gt_row gt_right">0.0044</td>
 </tr>
 <tr>
-<td class="gt_row gt_left"></td>
-<td class="gt_row gt_left">P(Cross) if HR=0.65<sup class="gt_footnote_marks">2</sup>
+<td headers="Analysis" class="gt_row gt_left"></td>
+<td headers="Value" class="gt_row gt_left">P(Cross) if HR=0.65<sup class="gt_footnote_marks">2</sup>
 </td>
-<td class="gt_row gt_right">0.7469</td>
+<td headers="Efficacy" class="gt_row gt_right">0.7469</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">Final</td>
-<td class="gt_row gt_left">Z</td>
-<td class="gt_row gt_right">2.3825</td>
+<td headers="Analysis" class="gt_row gt_left">Final</td>
+<td headers="Value" class="gt_row gt_left">Z</td>
+<td headers="Efficacy" class="gt_row gt_right">2.3825</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">N: 378</td>
-<td class="gt_row gt_left">p (1-sided)</td>
-<td class="gt_row gt_right">0.0086</td>
+<td headers="Analysis" class="gt_row gt_left">N: 378</td>
+<td headers="Value" class="gt_row gt_left">p (1-sided)</td>
+<td headers="Efficacy" class="gt_row gt_right">0.0086</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">Events: 284</td>
-<td class="gt_row gt_left">~HR at bound<sup class="gt_footnote_marks">1</sup>
+<td headers="Analysis" class="gt_row gt_left">Events: 284</td>
+<td headers="Value" class="gt_row gt_left">~HR at bound<sup class="gt_footnote_marks">1</sup>
 </td>
-<td class="gt_row gt_right">0.7535</td>
+<td headers="Efficacy" class="gt_row gt_right">0.7535</td>
 </tr>
 <tr>
-<td class="gt_row gt_left">Month: 42</td>
-<td class="gt_row gt_left">P(Cross) if HR=1<sup class="gt_footnote_marks">2</sup>
+<td headers="Analysis" class="gt_row gt_left">Month: 42</td>
+<td headers="Value" class="gt_row gt_left">P(Cross) if HR=1<sup class="gt_footnote_marks">2</sup>
 </td>
-<td class="gt_row gt_right">0.0100</td>
+<td headers="Efficacy" class="gt_row gt_right">0.0100</td>
 </tr>
 <tr>
-<td class="gt_row gt_left"></td>
-<td class="gt_row gt_left">P(Cross) if HR=0.65<sup class="gt_footnote_marks">2</sup>
+<td headers="Analysis" class="gt_row gt_left"></td>
+<td headers="Value" class="gt_row gt_left">P(Cross) if HR=0.65<sup class="gt_footnote_marks">2</sup>
 </td>
-<td class="gt_row gt_right">0.9000</td>
+<td headers="Efficacy" class="gt_row gt_right">0.9000</td>
 </tr>
 </tbody>
 <tfoot class="gt_footnotes">
@@ -755,7 +871,22 @@
 </div>
 <div class="tab-pane" id="h2-os-all" role="tabpanel" aria-labelledby="h2-os-all-tab">
 
-<p>The total sample size is assumed to be twice the above, N=756. The power and hazard ratio can be adjusted to appropriately size the trial rather than starting with adjusting sample size to reach a targeted power. For this example, we consider altering power (<code>beta</code>) while fixing the hazard ratio at 0.75, representing an increase in median OS from 12 months in the control group to 16 months in the experimental group. For this design, we consider a non-binding futility bound where the trial may be stopped early in the overall population if the bound is crossed. We use a <span class="citation">Hwang, Shih, and De Cani (1990)</span> bound with <span class="math inline">\(\gamma = -3.25\)</span>. Study designers should carefully consider implication for parameter choices, particularly if the futility bounds provide sensible guidance for stopping the trial. Since the futility bounds are non-binding, the efficacy bound is computed assuming the futility bound is ignored which will control Type I error at the targeted level even if a futility bound is crossed and the trial is continued.</p>
+<p>The total sample size is assumed to be twice the above, N=756. The
+power and hazard ratio can be adjusted to appropriately size the trial
+rather than starting with adjusting sample size to reach a targeted
+power. For this example, we consider altering power (<code>beta</code>)
+while fixing the hazard ratio at 0.75, representing an increase in
+median OS from 12 months in the control group to 16 months in the
+experimental group. For this design, we consider a non-binding futility
+bound where the trial may be stopped early in the overall population if
+the bound is crossed. We use a <span class="citation">Hwang, Shih, and
+De Cani (1990)</span> bound with <span class="math inline">\(\gamma =
+-3.25\)</span>. Study designers should carefully consider implication
+for parameter choices, particularly if the futility bounds provide
+sensible guidance for stopping the trial. Since the futility bounds are
+non-binding, the efficacy bound is computed assuming the futility bound
+is ignored which will control Type I error at the targeted level even if
+a futility bound is crossed and the trial is continued.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hr</span> <span class="op">&lt;-</span> <span class="fl">.75</span></span>
 <span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fl">.14</span></span>
@@ -770,7 +901,14 @@
 <span><span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu">gsDesign</span><span class="fu">::</span><span class="fu"><a href="https://keaven.github.io/gsDesign/reference/gsBoundSummary.html" class="external-link">gsBoundSummary</a></span><span class="op">(</span><span class="va">os</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">tab</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">tab</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">os</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Asymmetric two-sided group sequential design with non-binding futility bound, 3 analyses, time-to-event outcome with sample size 756 and 589 events required, 86 percent power, 1 percent (1-sided) Type I error to detect a hazard ratio of 0.75. Enrollment and total study durations are assumed to be 18 and 42 months, respectively. Efficacy bounds derived using a Lan-DeMets O’Brien-Fleming approximation spending function with none = 1. Futility bounds derived using a Hwang-Shih-DeCani spending function with gamma = -3.25.</p>
+<p>Asymmetric two-sided group sequential design with non-binding
+futility bound, 3 analyses, time-to-event outcome with sample size 756
+and 589 events required, 86 percent power, 1 percent (1-sided) Type I
+error to detect a hazard ratio of 0.75. Enrollment and total study
+durations are assumed to be 18 and 42 months, respectively. Efficacy
+bounds derived using a Lan-DeMets O’Brien-Fleming approximation spending
+function with none = 1. Futility bounds derived using a
+Hwang-Shih-DeCani spending function with gamma = -3.25.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tab</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>caption <span class="op">=</span> <span class="st">"Design for OS in all subjects"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -1003,14 +1141,29 @@ P(Cross) if HR=0.75
 </tr>
 </tbody>
 </table>
-<p>We can also plot different design characteristics. Here, we plot the approximate hazard ratio to cross each bound which may be helpful for design team discussions.</p>
+<p>We can also plot different design characteristics. Here, we plot the
+approximate hazard ratio to cross each bound which may be helpful for
+design team discussions.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">os</span>, plottype <span class="op">=</span> <span class="st">"HR"</span>, xlab <span class="op">=</span> <span class="st">"Events"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="GraphicalMultiplicity_files/figure-html/unnamed-chunk-8-1.png" width="80%" style="display: block; margin: auto;"></p>
 </div>
 <div class="tab-pane" id="h3-pfs-subgroup" role="tabpanel" aria-labelledby="h3-pfs-subgroup-tab">
 
-<p>For progression free survival (PFS) we assume a shorter median time to event of 5 months. With an assumed hazard ratio of 0.65, we adjust <code>beta</code> and <code>timing</code> to match the targeted sample size and interim analysis timing. We assume a larger dropout rate for PFS than we did for OS. Here we set up a futility bound for safety. This is an asymmetric 2-sided design with both futility and efficacy boundary crossing probabilities under the null hypothesis. The parameter <code>astar = 0.1</code> specifies total lower bound spending of 10%. The lower <span class="citation">Hwang, Shih, and De Cani (1990)</span> spending bound with <span class="math inline">\(\gamma = -8\)</span> is intended to be conservative in terms of futility at the interim, but still provide a safety bound for the PFS result in this targeted population. This would have to be carefully evaluated by the study design team at the time of design.</p>
+<p>For progression free survival (PFS) we assume a shorter median time
+to event of 5 months. With an assumed hazard ratio of 0.65, we adjust
+<code>beta</code> and <code>timing</code> to match the targeted sample
+size and interim analysis timing. We assume a larger dropout rate for
+PFS than we did for OS. Here we set up a futility bound for safety. This
+is an asymmetric 2-sided design with both futility and efficacy boundary
+crossing probabilities under the null hypothesis. The parameter
+<code>astar = 0.1</code> specifies total lower bound spending of 10%.
+The lower <span class="citation">Hwang, Shih, and De Cani (1990)</span>
+spending bound with <span class="math inline">\(\gamma = -8\)</span> is
+intended to be conservative in terms of futility at the interim, but
+still provide a safety bound for the PFS result in this targeted
+population. This would have to be carefully evaluated by the study
+design team at the time of design.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hr</span> <span class="op">&lt;-</span> <span class="fl">.65</span></span>
 <span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fl">.149</span></span>
@@ -1025,7 +1178,14 @@ P(Cross) if HR=0.75
 <span><span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu">gsDesign</span><span class="fu">::</span><span class="fu"><a href="https://keaven.github.io/gsDesign/reference/gsBoundSummary.html" class="external-link">gsBoundSummary</a></span><span class="op">(</span><span class="va">pfssub</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">tab</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">tab</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pfssub</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Asymmetric two-sided group sequential design with non-binding futility bound, 2 analyses, time-to-event outcome with sample size 378 and 296 events required, 85.1 percent power, 0.4 percent (1-sided) Type I error to detect a hazard ratio of 0.65. Enrollment and total study durations are assumed to be 18 and 32 months, respectively. Efficacy bounds derived using a Lan-DeMets O’Brien-Fleming approximation spending function with none = 1. Futility bounds derived using a Hwang-Shih-DeCani spending function with gamma = -8.</p>
+<p>Asymmetric two-sided group sequential design with non-binding
+futility bound, 2 analyses, time-to-event outcome with sample size 378
+and 296 events required, 85.1 percent power, 0.4 percent (1-sided) Type
+I error to detect a hazard ratio of 0.65. Enrollment and total study
+durations are assumed to be 18 and 32 months, respectively. Efficacy
+bounds derived using a Lan-DeMets O’Brien-Fleming approximation spending
+function with none = 1. Futility bounds derived using a
+Hwang-Shih-DeCani spending function with gamma = -8.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tab</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>caption <span class="op">=</span> <span class="st">"Design for PFS in the subgroup"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -1192,7 +1352,9 @@ P(Cross) if HR=0.65
 </div>
 <div class="tab-pane" id="h4-pfs-all" role="tabpanel" aria-labelledby="h4-pfs-all-tab">
 
-<p>Finally, we design for PFS in all subjects. In this case, we simplify to a one-sided design. A futility bound could be considered, if appropriate.</p>
+<p>Finally, we design for PFS in all subjects. In this case, we simplify
+to a one-sided design. A futility bound could be considered, if
+appropriate.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hr</span> <span class="op">&lt;-</span> <span class="fl">.74</span></span>
 <span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fl">.15</span></span>
@@ -1337,11 +1499,14 @@ P(Cross) if HR=0.74
 </div>
 <div class="tab-pane" id="h5-and-h6-orr" role="tabpanel" aria-labelledby="h5-and-h6-orr-tab">
 
-<p>For objective response rate (ORR), we assume an underlying control rate of 15%. In the subgroup population, we have almost 90% power to detect a 20% improvement.</p>
+<p>For objective response rate (ORR), we assume an underlying control
+rate of 15%. In the subgroup population, we have almost 90% power to
+detect a 20% improvement.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://keaven.github.io/gsDesign/reference/varBinomial.html" class="external-link">nBinomial</a></span><span class="op">(</span>p1 <span class="op">=</span> <span class="fl">.35</span>, p2 <span class="op">=</span> <span class="fl">.15</span>, alpha <span class="op">=</span> <span class="fl">.0005</span>, n <span class="op">=</span> <span class="fl">378</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; [1] 0.8911724</span></span></code></pre>
-<p>In the all subjects population, we have approximately 95% power to detect an improvement in ORR from 15% to 30%.</p>
+<p>In the all subjects population, we have approximately 95% power to
+detect an improvement in ORR from 15% to 30%.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://keaven.github.io/gsDesign/reference/varBinomial.html" class="external-link">nBinomial</a></span><span class="op">(</span>p1 <span class="op">=</span> <span class="fl">.3</span>, p2 <span class="op">=</span> <span class="fl">.15</span>, alpha <span class="op">=</span> <span class="fl">.0005</span>, n <span class="op">=</span> <span class="fl">756</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; [1] 0.9530369</span></span></code></pre>
@@ -1351,7 +1516,11 @@ P(Cross) if HR=0.74
 <div class="section level3">
 <h3 id="design-list">Design list<a class="anchor" aria-label="anchor" href="#design-list"></a>
 </h3>
-<p>Now we associate designs with hypotheses in an ordered list corresponding to the order in the multiplicity graph setup. Since ORR designs are not group sequential, we enter <code>NULL</code> values for those in the last 2 entries of the design list; hit code button to reveal code for this.</p>
+<p>Now we associate designs with hypotheses in an ordered list
+corresponding to the order in the multiplicity graph setup. Since ORR
+designs are not group sequential, we enter <code>NULL</code> values for
+those in the last 2 entries of the design list; hit code button to
+reveal code for this.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### THIS NEEDS TO BE MODIFIED TO MATCH STUDY</span></span>
 <span><span class="va">gsDlist</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">ossub</span>, <span class="va">os</span>, <span class="va">pfssub</span>, <span class="va">pfs</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
@@ -1359,30 +1528,85 @@ P(Cross) if HR=0.74
 <div class="section level3">
 <h3 id="spending-plan-and-spending-time">Spending plan and spending time<a class="anchor" aria-label="anchor" href="#spending-plan-and-spending-time"></a>
 </h3>
-<p>While it was relatively straightforward above to set up timing of analyses to match for the different hypotheses, accumulation of endpoints can vary from plan in a variety of ways. Planning on how to deal with this is critical at the time of protocol development to avoid later amendments or inappropriate <span class="math inline">\(\alpha\)</span>-allocation to early analyses. Before going into examples, we review the concept of <span class="math inline">\(\alpha\)</span>-spending and what we will refer to as <em>spending time</em>.</p>
-<p>For a given hypothesis, we will assign a non-decreasing spending function <span class="math inline">\(f(t)\)</span> defined for <span class="math inline">\(t\ge 0\)</span> with <span class="math inline">\(f(0)=0\)</span> and <span class="math inline">\(f(t)=\alpha\)</span> for <span class="math inline">\(t\ge 1\)</span>. We will assume <span class="math inline">\(K\)</span> analyses with observed event counts <span class="math inline">\(n_k\)</span> at analysis <span class="math inline">\(k=1,2,\ldots,K\)</span> and a targeted final event count of <span class="math inline">\(N_k\)</span>. The <span class="math inline">\(\alpha\)</span>-spending at analysis <span class="math inline">\(k\)</span> was originally defined <span class="citation">(Lan and DeMets 1983)</span> as <span class="math inline">\(f(t_k=n_k/N_K)\)</span>. The values <span class="math inline">\(n_k/N_K\)</span> will be referred to as the <em>information fraction</em>, <span class="math inline">\(k=1,\ldots,K\)</span>. This is used to pre-specify the cumulative amount of Type I error for a hypothesis at each analysis. In <span class="citation">Lan and DeMets (1989)</span> they noted that calendar time was another option for <span class="math inline">\(t_k\)</span> values, <span class="math inline">\(k=1,\ldots,K.\)</span> <span class="citation">Proschan, Lan, and Wittes (2006)</span> noted further that as long as <span class="math inline">\(t_k\)</span> is increasing with <span class="math inline">\(k\)</span>, it can be used to define spending; this is subject to the requirement that under the null hypothesis, the timing must be selected in a way that is not correlated with the test statistic (e.g., blinded). We will refer to <span class="math inline">\(t_k\)</span>, regardless of its definition, as the <em>spending time</em> for a hypothesis. Note that the joint distribution of interim and final tests for a hypothesis is driven by <span class="math inline">\(n_k\)</span>, <span class="math inline">\(k=1,\ldots,K\)</span>. This is equivalent to basing correlation on the information fraction <span class="math inline">\(n_k^{(actual)}/n_K^{(planned)}\)</span>, <span class="math inline">\(1\le k\le K\)</span>. Thus, both spending time and information fraction are required to compute bounds for group sequential testing. Our general objectives here will be to:</p>
+<p>While it was relatively straightforward above to set up timing of
+analyses to match for the different hypotheses, accumulation of
+endpoints can vary from plan in a variety of ways. Planning on how to
+deal with this is critical at the time of protocol development to avoid
+later amendments or inappropriate <span class="math inline">\(\alpha\)</span>-allocation to early analyses.
+Before going into examples, we review the concept of <span class="math inline">\(\alpha\)</span>-spending and what we will refer to
+as <em>spending time</em>.</p>
+<p>For a given hypothesis, we will assign a non-decreasing spending
+function <span class="math inline">\(f(t)\)</span> defined for <span class="math inline">\(t\ge 0\)</span> with <span class="math inline">\(f(0)=0\)</span> and <span class="math inline">\(f(t)=\alpha\)</span> for <span class="math inline">\(t\ge 1\)</span>. We will assume <span class="math inline">\(K\)</span> analyses with observed event counts
+<span class="math inline">\(n_k\)</span> at analysis <span class="math inline">\(k=1,2,\ldots,K\)</span> and a targeted final event
+count of <span class="math inline">\(N_k\)</span>. The <span class="math inline">\(\alpha\)</span>-spending at analysis <span class="math inline">\(k\)</span> was originally defined <span class="citation">(Lan and DeMets 1983)</span> as <span class="math inline">\(f(t_k=n_k/N_K)\)</span>. The values <span class="math inline">\(n_k/N_K\)</span> will be referred to as the
+<em>information fraction</em>, <span class="math inline">\(k=1,\ldots,K\)</span>. This is used to pre-specify
+the cumulative amount of Type I error for a hypothesis at each analysis.
+In <span class="citation">Lan and DeMets (1989)</span> they noted that
+calendar time was another option for <span class="math inline">\(t_k\)</span> values, <span class="math inline">\(k=1,\ldots,K.\)</span> <span class="citation">Proschan, Lan, and Wittes (2006)</span> noted further
+that as long as <span class="math inline">\(t_k\)</span> is increasing
+with <span class="math inline">\(k\)</span>, it can be used to define
+spending; this is subject to the requirement that under the null
+hypothesis, the timing must be selected in a way that is not correlated
+with the test statistic (e.g., blinded). We will refer to <span class="math inline">\(t_k\)</span>, regardless of its definition, as the
+<em>spending time</em> for a hypothesis. Note that the joint
+distribution of interim and final tests for a hypothesis is driven by
+<span class="math inline">\(n_k\)</span>, <span class="math inline">\(k=1,\ldots,K\)</span>. This is equivalent to
+basing correlation on the information fraction <span class="math inline">\(n_k^{(actual)}/n_K^{(planned)}\)</span>, <span class="math inline">\(1\le k\le K\)</span>. Thus, both spending time and
+information fraction are required to compute bounds for group sequential
+testing. Our general objectives here will be to:</p>
 <ul>
-<li>Spend all Type I error for each hypothesis in its combined interim and final analyses; this requires the spending time to be 1 for the final analysis of a hypothesis.</li>
-<li>Ensure spending time is well defined for each analysis of each hypothesis.</li>
-<li>We will assume that both follow-up duration and event counts may be of interest in determining timing of analyses; e.g., for immuno-oncology therapies there have been delayed treatment effects and the tail of the time-to-event distribution has been important to establish benefit. Thus, we will assume here that over-spending at interim analysis is to be avoided.</li>
+<li>Spend all Type I error for each hypothesis in its combined interim
+and final analyses; this requires the spending time to be 1 for the
+final analysis of a hypothesis.</li>
+<li>Ensure spending time is well defined for each analysis of each
+hypothesis.</li>
+<li>We will assume that both follow-up duration and event counts may be
+of interest in determining timing of analyses; e.g., for immuno-oncology
+therapies there have been delayed treatment effects and the tail of the
+time-to-event distribution has been important to establish benefit.
+Thus, we will assume here that over-spending at interim analysis is to
+be avoided.</li>
 </ul>
-<p>Here we assume that the subgroup prevalence was over-estimated in the study design and indicating how spending time can be used to deal with this deviation from plan.</p>
+<p>Here we assume that the subgroup prevalence was over-estimated in the
+study design and indicating how spending time can be used to deal with
+this deviation from plan.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="results-entry-at-time-of-analysis">Results entry at time of analysis<a class="anchor" aria-label="anchor" href="#results-entry-at-time-of-analysis"></a>
 </h2>
-<p>Results for each analysis performed should be entered here. We begin by documenting timing and event counts of each analysis. Then we proceed to enter nominal 1-sided testing p-values for each analysis of each hypothesis.</p>
+<p>Results for each analysis performed should be entered here. We begin
+by documenting timing and event counts of each analysis. Then we proceed
+to enter nominal 1-sided testing p-values for each analysis of each
+hypothesis.</p>
 <div class="section level3">
-<h3 id="timing-of-analyses-and-resulting-event-counts-and-spending-times">Timing of analyses and resulting event counts and spending times<a class="anchor" aria-label="anchor" href="#timing-of-analyses-and-resulting-event-counts-and-spending-times"></a>
+<h3 id="timing-of-analyses-and-resulting-event-counts-and-spending-times">Timing of analyses and resulting event counts and spending
+times<a class="anchor" aria-label="anchor" href="#timing-of-analyses-and-resulting-event-counts-and-spending-times"></a>
 </h3>
-<p>Recall that the design assumed 50% prevalence of the subgroup. Here we assume that the observed prevalence is 40% and that, by specification stated above, we enroll until the targeted subpopulation of 378 is achieved. This is assumed to occur after 22 months with a total enrollment of 940. Timing of analyses is now targeted as follows:</p>
+<p>Recall that the design assumed 50% prevalence of the subgroup. Here
+we assume that the observed prevalence is 40% and that, by specification
+stated above, we enroll until the targeted subpopulation of 378 is
+achieved. This is assumed to occur after 22 months with a total
+enrollment of 940. Timing of analyses is now targeted as follows:</p>
 <ul>
-<li>The first interim is scheduled 28 months, 6 months after final enrollment.</li>
-<li>The second interim is scheduled at the later of 14 months after final enrollment (22 + 14 = 36 months after start of enrollment) or the targeted final PFS event count of 297 events. We assume the event count is reached at 34 months and that the achieved final event count is 320 in the subgroup at 36 months.</li>
-<li>The final analysis is scheduled at 24 months after final enrollment (month 22 + 24 = 46) or when 284 events have been observed in the subgroup, whichever comes first; there is also the qualification that the final analysis will be no more than 30 months after final enrollment (6 months after targeted time). We assume the targeted event count is not reached by 6 months after the targeted final analysis time and, thus, the final analysis cutoff is set at month 22 + 30 = 52 and that at that time 270 OS events have been observed in the subgroup.</li>
+<li>The first interim is scheduled 28 months, 6 months after final
+enrollment.</li>
+<li>The second interim is scheduled at the later of 14 months after
+final enrollment (22 + 14 = 36 months after start of enrollment) or the
+targeted final PFS event count of 297 events. We assume the event count
+is reached at 34 months and that the achieved final event count is 320
+in the subgroup at 36 months.</li>
+<li>The final analysis is scheduled at 24 months after final enrollment
+(month 22 + 24 = 46) or when 284 events have been observed in the
+subgroup, whichever comes first; there is also the qualification that
+the final analysis will be no more than 30 months after final enrollment
+(6 months after targeted time). We assume the targeted event count is
+not reached by 6 months after the targeted final analysis time and,
+thus, the final analysis cutoff is set at month 22 + 30 = 52 and that at
+that time 270 OS events have been observed in the subgroup.</li>
 </ul>
-<p>All of the above leads to event counts and spending for PFS and OS as follows:</p>
+<p>All of the above leads to event counts and spending for PFS and OS as
+follows:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY</span></span>
 <span><span class="co"># PFS, overall population</span></span>
@@ -1397,7 +1621,12 @@ P(Cross) if HR=0.74
 <div class="section level3">
 <h3 id="nominal-p-values-for-each-analysis">Nominal p-values for each analysis<a class="anchor" aria-label="anchor" href="#nominal-p-values-for-each-analysis"></a>
 </h3>
-<p>For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99). No other entry is required by the user in any other section of the document. Calendar timing is also associated with PFS hypotheses for use in spending functions. Spending time for OS spending will be input as NULL so that spending will be based on event counts for OS hypotheses.</p>
+<p>For analyses not yet performed enter dummy values, including a
+p-value near 1 (e.g., .99). No other entry is required by the user in
+any other section of the document. Calendar timing is also associated
+with PFS hypotheses for use in spending functions. Spending time for OS
+spending will be input as NULL so that spending will be based on event
+counts for OS hypotheses.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY</span></span>
 <span><span class="va">inputResults</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
@@ -1751,7 +1980,10 @@ NA
 <div class="section level3">
 <h3 id="compute-sequential-p-values-for-each-hypothesis">Compute sequential p-values for each hypothesis<a class="anchor" aria-label="anchor" href="#compute-sequential-p-values-for-each-hypothesis"></a>
 </h3>
-<p>Sequential p-value computation is done in one loop in an attempt to minimize chances for coding errors. We delay showing these until after display of the sequence of multiplicity graphs generated by hypothesis rejection is shown.</p>
+<p>Sequential p-value computation is done in one loop in an attempt to
+minimize chances for coding errors. We delay showing these until after
+display of the sequence of multiplicity graphs generated by hypothesis
+rejection is shown.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">### USER SHOULD NOT NEED TO MODIFY THIS CODE</span></span>
 <span><span class="va">EOCtab</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
@@ -1779,7 +2011,8 @@ NA
 <div class="section level3">
 <h3 id="evaluate-hypothesis-rejection-using-gmcplite">Evaluate hypothesis rejection using gMCPLite<a class="anchor" aria-label="anchor" href="#evaluate-hypothesis-rejection-using-gmcplite"></a>
 </h3>
-<p>We need to set up a <code>graph</code> object as implemented in the gMCPLite package.</p>
+<p>We need to set up a <code>graph</code> object as implemented in the
+gMCPLite package.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Make a graph object</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">nameHypotheses</span></span>
@@ -1791,7 +2024,8 @@ NA
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co"># graph@nodeAttr$X &lt;- rescale * d$x * 1.75</span></span>
 <span><span class="co"># graph@nodeAttr$Y &lt;- -rescale * d$y * 2</span></span></code></pre></div>
-<p>Now we add the sequential p-values and evaluate which hypotheses have been rejected.</p>
+<p>Now we add the sequential p-values and evaluate which hypotheses have
+been rejected.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gMCP.html">gMCP</a></span><span class="op">(</span>graph <span class="op">=</span> <span class="va">graph</span>, pvalues <span class="op">=</span> <span class="va">EOCtab</span><span class="op">$</span><span class="va">seqp</span>, alpha <span class="op">=</span> <span class="va">fwer</span><span class="op">)</span></span>
 <span><span class="va">result</span><span class="op">@</span><span class="va">rejected</span></span></code></pre></div>
@@ -1909,10 +2143,19 @@ NA
 <div class="section level3">
 <h3 id="comparison-of-sequential-p-values-to-multiplicity-graphs">Comparison of sequential p-values to multiplicity graphs<a class="anchor" aria-label="anchor" href="#comparison-of-sequential-p-values-to-multiplicity-graphs"></a>
 </h3>
-<p>We can compare sequential p-values to available <span class="math inline">\(\alpha\)</span> in each graph. In the column ‘Last Graph’ we can see one of 2 things:</p>
+<p>We can compare sequential p-values to available <span class="math inline">\(\alpha\)</span> in each graph. In the column ‘Last
+Graph’ we can see one of 2 things:</p>
 <ol style="list-style-type: decimal">
-<li>For rejected hypotheses, the maximum <span class="math inline">\(\alpha\)</span> allocated to the hypothesis. For example, hypothesis one was allocated <span class="math inline">\(\alpha=0.01\)</span> in the first graph above (select using first tab). We see that the sequential p-value of 0.0001 is smaller than <span class="math inline">\(\alpha=0.01\)</span> and thus the hypothesis is rejected. We can then proceed to the second graph and see that hypothesis 5 was rejected. The last hypothesis rejected is hypothesis 3 in the third graph.</li>
-<li>For the remaining hypotheses (H2, H4, H6) the maximum <span class="math inline">\(\alpha\)</span> allocated is in the fourth graph; since each sequential p-value is greater than the allocated <span class="math inline">\(\alpha\)</span> for the corresponding hypothesis, none of these hypotheses were rejected.</li>
+<li>For rejected hypotheses, the maximum <span class="math inline">\(\alpha\)</span> allocated to the hypothesis. For
+example, hypothesis one was allocated <span class="math inline">\(\alpha=0.01\)</span> in the first graph above
+(select using first tab). We see that the sequential p-value of 0.0001
+is smaller than <span class="math inline">\(\alpha=0.01\)</span> and
+thus the hypothesis is rejected. We can then proceed to the second graph
+and see that hypothesis 5 was rejected. The last hypothesis rejected is
+hypothesis 3 in the third graph.</li>
+<li>For the remaining hypotheses (H2, H4, H6) the maximum <span class="math inline">\(\alpha\)</span> allocated is in the fourth graph;
+since each sequential p-value is greater than the allocated <span class="math inline">\(\alpha\)</span> for the corresponding hypothesis,
+none of these hypotheses were rejected.</li>
 </ol>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">EOCtabx</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -2107,9 +2350,19 @@ FALSE
 </table>
 </div>
 <div class="section level3 tabset">
-<h3 class="tabset" id="bounds-at-final-alpha-allocated-for-group-sequential-tests">Bounds at final <span class="math inline">\(\alpha\)</span> allocated for group sequential tests<a class="anchor" aria-label="anchor" href="#bounds-at-final-alpha-allocated-for-group-sequential-tests"></a>
+<h3 class="tabset" id="bounds-at-final-alpha-allocated-for-group-sequential-tests">Bounds at final <span class="math inline">\(\alpha\)</span> allocated for group sequential
+tests<a class="anchor" aria-label="anchor" href="#bounds-at-final-alpha-allocated-for-group-sequential-tests"></a>
 </h3>
-<p>As a separate validation, we examine group sequential bounds for each hypothesis updated with 1) the maximum <span class="math inline">\(\alpha\)</span> allocated above, 2) the number of events at each analysis, and 3) the cumulative spending at each analysis above. The nominal p-value for at least one of the analyses performed for each rejected hypotheses should be less than or equal to the nominal p-value in the group sequential design. For each hypothesis not rejected, all nominal p-values are greater than the its corresponding bound. For hypotheses tested without a group sequential design, the nominal p-value for the test of that hypothesis can be compared to the maximum alpha allocated in the above table.</p>
+<p>As a separate validation, we examine group sequential bounds for each
+hypothesis updated with 1) the maximum <span class="math inline">\(\alpha\)</span> allocated above, 2) the number of
+events at each analysis, and 3) the cumulative spending at each analysis
+above. The nominal p-value for at least one of the analyses performed
+for each rejected hypotheses should be less than or equal to the nominal
+p-value in the group sequential design. For each hypothesis not
+rejected, all nominal p-values are greater than the its corresponding
+bound. For hypotheses tested without a group sequential design, the
+nominal p-value for the test of that hypothesis can be compared to the
+maximum alpha allocated in the above table.</p>
 
 
 
@@ -2197,7 +2450,8 @@ FALSE
 <div class="active  tab-pane" id="NA" role="tabpanel" aria-labelledby="NA-tab"></div>
 <div class="tab-pane" id="hypothesis-1" role="tabpanel" aria-labelledby="hypothesis-1-tab">
 
-<p>Nominal p-values at each analysis for comparison to bounds in table below:</p>
+<p>Nominal p-values at each analysis for comparison to bounds in table
+below:</p>
 <p>0.03 0.0001 0.000001</p>
 <table class="table table" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -2286,7 +2540,8 @@ p (1-sided)
 </div>
 <div class="tab-pane" id="hypothesis-2" role="tabpanel" aria-labelledby="hypothesis-2-tab">
 
-<p>Nominal p-values at each analysis for comparison to bounds in table below:</p>
+<p>Nominal p-values at each analysis for comparison to bounds in table
+below:</p>
 <p>0.2 0.15 0.1</p>
 <table class="table table" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -2375,7 +2630,8 @@ p (1-sided)
 </div>
 <div class="tab-pane" id="hypothesis-3" role="tabpanel" aria-labelledby="hypothesis-3-tab">
 
-<p>Nominal p-values at each analysis for comparison to bounds in table below:</p>
+<p>Nominal p-values at each analysis for comparison to bounds in table
+below:</p>
 <p>0.2 0.001</p>
 <table class="table table" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -2442,7 +2698,8 @@ p (1-sided)
 </div>
 <div class="tab-pane" id="hypothesis-4" role="tabpanel" aria-labelledby="hypothesis-4-tab">
 
-<p>Nominal p-values at each analysis for comparison to bounds in table below:</p>
+<p>Nominal p-values at each analysis for comparison to bounds in table
+below:</p>
 <p>0.3 0.2</p>
 <table class="table table" style="margin-left: auto; margin-right: auto;">
 <caption>
@@ -2526,48 +2783,87 @@ p (1-sided)
 <div class="section level2">
 <h2 id="session-information">Session information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<p>You can use <code><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo()</a></code> to document the versions of R and R packages used to render this document. Note, in particular, that version 3.1 or later of the <strong>gsDesign</strong> package is needed.</p>
+<p>You can use <code><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo()</a></code> to document the versions of R
+and R packages used to render this document. Note, in particular, that
+version 3.1 or later of the <strong>gsDesign</strong> package is
+needed.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <script type="text/javascript">
-// Temporary fix for dynamic tabsets code block rendering issue under pkgdown
+// Fix dynamic tabsets code block rendering issue under pkgdown
 (function () {
-    unstyled_code = document.querySelectorAll('button code');
+  // Fix the tweaked element class
+  unstyledCode = document.querySelectorAll("button code");
 
-    block0_old = unstyled_code[0].outerHTML;
-    block0_new = "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" + block0_old + "</pre>";
-    unstyled_code[0].outerHTML = block0_new;
+  // Quit if there are no elements matched (when not rendered by pkgdown)
+  if (!unstyledCode.length) {
+    return;
+  }
 
-    block1_old = unstyled_code[1].outerHTML;
-    block1_new = "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" + block1_old + "</pre>";
-    unstyled_code[1].outerHTML = block1_new;
+  for (let i = 0; i < unstyledCode.length; i++) {
+    blockOld = unstyledCode[i].outerHTML;
+    blockNew =
+      "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" +
+      blockOld +
+      "</pre>";
+    unstyledCode[i].outerHTML = blockNew;
+  }
+
+  // Activate the first real tab
+  var tabElements = [
+    "ul#multiplicity-graph-sequence-from-gmcplite li:nth-child(2) button",
+    "ul#bounds-at-final-alpha-allocated-for-group-sequential-tests li:nth-child(2) button",
+  ];
+
+  for (let i = 0; i < tabElements.length; i++) {
+    var el = document.querySelector(tabElements[i]);
+    var tab = new bootstrap.Tab(el);
+    tab.show();
+  }
 })();
 </script><div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Bretz2009" class="csl-entry">
-Bretz, Frank, Willi Maurer, and Martin Posch. 2009. <span>“A Graphical Approach to Sequentially Rejective Multiple Test Procedures.”</span> <em>Statistics in Medicine</em> 28: 586–604.
+Bretz, Frank, Willi Maurer, and Martin Posch. 2009. <span>“A Graphical
+Approach to Sequentially Rejective Multiple Test Procedures.”</span>
+<em>Statistics in Medicine</em> 28: 586–604.
 </div>
 <div id="ref-KEYNOTE048" class="csl-entry">
-Burtness, Barbara, Kevin J Harrington, Richard Greil, Denis Soulières, Makoto Tahara, Gilberto de Castro Jr, Amanda Psyrri, et al. 2019. <span>“Pembrolizumab Alone or with Chemotherapy Versus Cetuximab with Chemotherapy for Recurrent or Metastatic Squamous Cell Carcinoma of the Head and Neck (KEYNOTE-048): A Randomised, Open-Label, Phase 3 Study.”</span> <em>The Lancet</em> 394 (10212): 1915–28.
+Burtness, Barbara, Kevin J Harrington, Richard Greil, Denis Soulières,
+Makoto Tahara, Gilberto de Castro Jr, Amanda Psyrri, et al. 2019.
+<span>“Pembrolizumab Alone or with Chemotherapy Versus Cetuximab with
+Chemotherapy for Recurrent or Metastatic Squamous Cell Carcinoma of the
+Head and Neck (KEYNOTE-048): A Randomised, Open-Label, Phase 3
+Study.”</span> <em>The Lancet</em> 394 (10212): 1915–28.
 </div>
 <div id="ref-HwangShihDeCani" class="csl-entry">
-Hwang, Irving K, Weichung J Shih, and John S De Cani. 1990. <span>“Group Sequential Designs Using a Family of Type i Error Probability Spending Functions.”</span> <em>Statistics in Medicine</em> 9 (12): 1439–45.
+Hwang, Irving K, Weichung J Shih, and John S De Cani. 1990. <span>“Group
+Sequential Designs Using a Family of Type i Error Probability Spending
+Functions.”</span> <em>Statistics in Medicine</em> 9 (12): 1439–45.
 </div>
 <div id="ref-LanDeMets" class="csl-entry">
-Lan, K. K. G., and David L. DeMets. 1983. <span>“Discrete Sequential Boundaries for Clinical Trials.”</span> <em>Biometrika</em> 70: 659–63.
+Lan, K. K. G., and David L. DeMets. 1983. <span>“Discrete Sequential
+Boundaries for Clinical Trials.”</span> <em>Biometrika</em> 70: 659–63.
 </div>
 <div id="ref-LanDeMets1989" class="csl-entry">
-———. 1989. <span>“Group Sequential Procedures: Calendar Versus Information Time.”</span> <em>Statistics in Medicine</em> 8: 1191–98.
+———. 1989. <span>“Group Sequential Procedures: Calendar Versus
+Information Time.”</span> <em>Statistics in Medicine</em> 8: 1191–98.
 </div>
 <div id="ref-LiuAnderson2008" class="csl-entry">
-Liu, Qing, and Keaven M Anderson. 2008. <span>“On Adaptive Extensions of Group Sequential Trials for Clinical Investigations.”</span> <em>Journal of the American Statistical Association</em> 103 (484): 1621–30.
+Liu, Qing, and Keaven M Anderson. 2008. <span>“On Adaptive Extensions of
+Group Sequential Trials for Clinical Investigations.”</span> <em>Journal
+of the American Statistical Association</em> 103 (484): 1621–30.
 </div>
 <div id="ref-MaurerBretz2013" class="csl-entry">
-Maurer, Willi, and Frank Bretz. 2013. <span>“Multiple Testing in Group Sequential Trials Using Graphical Approaches.”</span> <em>Statistics in Biopharmaceutical Research</em> 5: 311–20.
+Maurer, Willi, and Frank Bretz. 2013. <span>“Multiple Testing in Group
+Sequential Trials Using Graphical Approaches.”</span> <em>Statistics in
+Biopharmaceutical Research</em> 5: 311–20.
 </div>
 <div id="ref-PLWBook" class="csl-entry">
-Proschan, Michael A., K. K. Gordon Lan, and Janet Turk Wittes. 2006. <em>Statistical Monitoring of Clinical Trials. A Unified Approach</em>. New York, NY: Springer.
+Proschan, Michael A., K. K. Gordon Lan, and Janet Turk Wittes. 2006.
+<em>Statistical Monitoring of Clinical Trials. A Unified Approach</em>.
+New York, NY: Springer.
 </div>
 </div>
 </div>
@@ -2579,7 +2875,7 @@ Proschan, Michael A., K. K. Gordon Lan, and Janet Turk Wittes. 2006. <em>Statist
 
     <footer><div class="pkgdown-footer-left">
   <p></p>
-<p>Developed by Yalin Zhu, Yilong Zhang, Xuan Deng, Keaven Anderson, Nan Xiao. Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6. <br>Copyright © 2022 Merck &amp; Co., Inc., Rahway, NJ, USA and its affiliates. All rights reserved.</p>
+<p>Developed by Yalin Zhu, Yilong Zhang, Xuan Deng, Keaven Anderson, Nan Xiao. Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7. <br>Copyright © 2022 Merck &amp; Co., Inc., Rahway, NJ, USA and its affiliates. All rights reserved.</p>
 </div>
 
 <div class="pkgdown-footer-right">
