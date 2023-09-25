@@ -1,6 +1,11 @@
+# gMCPLite 0.1.3
+
+- Fix pkgdown vignette rendering of dynamic tabsets (#16).
+- Update maintainer email.
+
 # gMCPLite 0.1.2
 
-- Added `docs` in .Rbuildignore.
+- Added `docs/` in `.Rbuildignore`.
 - Fixed a few typos.
 
 # gMCPLite 0.1.1
