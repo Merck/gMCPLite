@@ -14,7 +14,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 #' Create multiplicity graphs using ggplot2
 #'
 #' Plots a multiplicity graph defined by user inputs.
@@ -52,6 +52,17 @@
 #' @return A `ggplot` object with a multi-layer multiplicity graph
 #'
 #' @examples
+#' # Use Cairo PDF device for better Unicode character support
+#' # when checking the package. Needed for R >= 4.4.0.
+#' if (names(dev.cur()) == "pdf") {
+#'   fn <- attr(.Device, "filepath")
+#'   fn0 <- "gMCPLite-Ex.pdf"
+#'   if (!is.null(fn) && fn == fn0) {
+#'     dv <- cairo_pdf(fn0)
+#'     on.exit(dev.off(dv), add = TRUE)
+#'   }
+#' }
+#'
 #' # Defaults: note clockwise ordering
 #' hGraph(5)
 #' # Add colors (default is 3 gray shades)

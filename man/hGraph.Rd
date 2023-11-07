@@ -109,6 +109,17 @@ See vignette **Multiplicity graphs formatting using ggplot2**
 for explanation of formatting.
 }
 \examples{
+# Use Cairo PDF device for better Unicode character support
+# when checking the package. Needed for R >= 4.4.0.
+if (names(dev.cur()) == "pdf") {
+  fn <- attr(.Device, "filepath")
+  fn0 <- "gMCPLite-Ex.pdf"
+  if (!is.null(fn) && fn == fn0) {
+    dv <- cairo_pdf(fn0)
+    on.exit(dev.off(dv), add = TRUE)
+  }
+}
+
 # Defaults: note clockwise ordering
 hGraph(5)
 # Add colors (default is 3 gray shades)

@@ -1,3 +1,9 @@
+# gMCPLite 0.1.4
+
+- Use the `cairo_pdf()` device for better Unicode character plotting support
+  in code examples when the `pdf()` device is intentionally used, for example,
+  when running `R CMD check` on the package (#22).
+
 # gMCPLite 0.1.3
 
 - Fix pkgdown vignette rendering of dynamic tabsets (#16).
