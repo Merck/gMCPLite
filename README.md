@@ -6,13 +6,13 @@
 [![Codecov test coverage](https://codecov.io/gh/Merck/gMCPLite/branch/main/graph/badge.svg)](https://app.codecov.io/gh/Merck/gMCPLite?branch=main)
 <!-- badges: end -->
 
-`gMCPLite` is a fork of `gMCP` for graph-based multiple comparison procedures,
+gMCPLite is a fork of gMCP for graph-based multiple comparison procedures,
 with the following features:
 
 - Kept a selected subset of the original functions.
-- Removed the `rJava` dependency and the Java-based graphical interface.
-- Added an `hGraph()` function for `ggplot2` visualizations.
-  It bridges `gMCP` result objects and `gsDesign` to produce
+- Removed the rJava dependency and the Java-based graphical interface.
+- Added an `hGraph()` function for ggplot2 visualizations.
+  It bridges gMCP result objects and gsDesign to produce
   multiple comparison graphs and sequential graph updates.
 
 ## Installation

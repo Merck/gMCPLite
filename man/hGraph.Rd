@@ -101,7 +101,7 @@ A `ggplot` object with a multi-layer multiplicity graph
 }
 \description{
 Plots a multiplicity graph defined by user inputs.
-The graph can also be used with the ***gMCP*** package to evaluate a set of
+The graph can also be used with the gMCP package to evaluate a set of
 nominal p-values for the tests of the hypotheses in the graph.
 }
 \details{

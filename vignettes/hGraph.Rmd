@@ -30,13 +30,13 @@ library(dplyr)
 library(gridExtra)
 ```
 
-With `gsDesign` version 3.1, we have added a function to support graphical multiplicity methods using ***`ggplot2`***, this function is migrated to the `gMCPLite` package now.
+With gsDesign version 3.1, we have added a function to support graphical multiplicity methods using ggplot2, this function is migrated to the gMCPLite package now.
 
-The graphical method is introduced nicely in @Bretz2011 and originally supported by the ***`gMCP`*** packages (@gMCP), and now ***`gMCPLite`*** package.
+The graphical method is introduced nicely in @Bretz2011 and originally supported by the gMCP packages (@gMCP), and now gMCPLite package.
 It was extended to group sequential design by @MaurerBretz2013.
-While the ***`gMCPLite`***
-package supports graphics, here we add the `hGraph()` function to create multiplicity graphs using the ***`ggplot2`*** package as a convenience for those desiring this format.
-We demonstrate basic formatting in this article and demonstrate use with ***`gMCPLite`*** in the other article.
+While the gMCPLite
+package supports graphics, here we add the `hGraph()` function to create multiplicity graphs using the ggplot2 package as a convenience for those desiring this format.
+We demonstrate basic formatting in this article and demonstrate use with gMCPLite in the other article.
 
 Use of `hGraph()` is organized as follows:
 
