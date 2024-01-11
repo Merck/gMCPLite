@@ -1,3 +1,10 @@
+# gMCPLite 0.1.5
+
+- In `hGraph()`, the `scale_fill_manual()` call now has the `guide`
+  argument explicitly named for compatibility with ggplot2 >= 3.5.0
+  (thanks, @teunbrand, #25).
+- Standardize package name style in documentation (#27).
+
 # gMCPLite 0.1.4
 
 - Use the `cairo_pdf()` device for better Unicode character plotting support
