@@ -449,7 +449,7 @@ getWeightStr <- function(graph, from, to, LaTeX=FALSE) {
 			return(getLaTeXFraction(weight))
 		} else {
       asNr <- try(eval(parse(text=weight), envir=NULL, enclos=NULL), silent=TRUE)
-		  if (!is.na(asNr) && !("try-error"%in%class(asNr))) {
+		  if (!is.na(asNr) && !(inherits(asNr, "try-error"))) {
 		    return(getLaTeXFraction(asNr))
 		  }
 		}
@@ -514,7 +514,7 @@ setMethod("plot", "graphMCP",
 #' @references Frank Bretz, Willi Maurer, Werner Brannath, Martin Posch: A
 #' graphical approach to sequentially rejective multiple test procedures.
 #' Statistics in Medicine 2009 vol. 28 issue 4 page 586-604.
-#' \url{http://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
+#' \url{https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
 #'
 #' @keywords htest graphs
 #'
@@ -568,12 +568,12 @@ setMethod("simConfint", c("graphMCP"), function(object, pvalues, confint, altern
 			if (alternative=="greater") {
 				stderr <- abs(estimates/dist(1-pvalues))
 				lb <- estimates+dist(alpha)*stderr
-				lb <- ifelse(getRejected(result), max(0,lb), lb)
+				lb <- ifelse(getRejected(result), pmax(mu, lb), lb)
 				ub <- rep(Inf,length(lb))
 			} else if (alternative=="less") {
 				stderr <- abs(estimates/dist(pvalues))
 				ub <- estimates+dist(1-alpha)*stderr
-				ub <- ifelse(getRejected(result), min(0,ub), ub)
+				ub <- ifelse(getRejected(result), pmin(mu, ub), ub)
 				lb <- rep(-Inf,length(ub))
 			} else {
 				stop("Specify alternative as \"less\" or \"greater\".")
