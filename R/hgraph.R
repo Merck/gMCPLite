@@ -309,7 +309,7 @@ hGraph <- function(
     #   scale_alpha(guide="none") +
     scale_fill_manual(values=palette,
                       labels=labels,
-                      guide_legend(legend.name)) +
+                      guide = guide_legend(legend.name)) +
     theme(legend.position = legend.position,
           legend.title = ggplot2::element_text(size = legend.textsize),
           legend.text = ggplot2::element_text(size = legend.textsize)) +
