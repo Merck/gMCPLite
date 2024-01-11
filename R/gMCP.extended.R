@@ -155,6 +155,7 @@ bonferroni.test <- function(pvalues, weights, alpha=0.05, adjPValues=TRUE, verbo
 #' (2011): Graphical approaches for multiple endpoint problems using weighted
 #' Bonferroni, Simes or parametric tests. Biometrical Journal 53 (6),
 #' pages 894-913, Wiley.
+#' \doi{10.1002/bimj.201000239}
 #'
 #' @export
 parametric.test <- function(pvalues, weights, alpha=0.05, adjPValues=TRUE, verbose=FALSE, correlation, ...) {
@@ -361,12 +362,13 @@ simes.test <- function(pvalues, weights, alpha=0.05, adjPValues=TRUE, verbose=FA
 #' @references Frank Bretz, Willi Maurer, Werner Brannath, Martin Posch: A
 #' graphical approach to sequentially rejective multiple test procedures.
 #' Statistics in Medicine 2009 vol. 28 issue 4 page 586-604.
-#' \url{http://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
+#' \url{https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
 #'
 #' Bretz F., Posch M., Glimm E., Klinglmueller F., Maurer W., Rohmeyer K.
 #' (2011): Graphical approaches for multiple endpoint problems using weighted
 #' Bonferroni, Simes or parametric tests. Biometrical Journal 53 (6),
 #' pages 894-913, Wiley.
+#' \doi{10.1002/bimj.201000239}
 #'
 #' Strassburger K., Bretz F.: Compatible simultaneous lower confidence bounds
 #' for the Holm procedure and other Bonferroni based closed tests. Statistics

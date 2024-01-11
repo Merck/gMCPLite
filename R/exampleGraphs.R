@@ -83,7 +83,7 @@
 #' Bretz, F., Maurer, W., Brannath, W., Posch, M.: A graphical approach to
 #' sequentially rejective multiple test procedures. Statistics in Medicine 2009
 #' vol. 28 issue 4 page 586-604.
-#' \url{http://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
+#' \url{https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
 #'
 #' Bretz, F., Maurer, W. and Hommel, G. (2011), Test and power considerations
 #' for multiple endpoint analyses using sequentially rejective graphical
@@ -448,7 +448,7 @@ improvedParallelGatekeeping <- function() {
 	edgeAttr(graph, "H4", "H2", "labelY") <- 200
 	attr(graph, "description") <- paste("Graph representing an improved parallel gatekeeping procedure",
 			"",
-			"Literature: Bretz, F., Maurer, W., Brannath, W., Posch, M.: A graphical approach to sequentially rejective multiple test procedures. Statistics in Medicine 2009 vol. 28 issue 4 page 586-604. URL: http://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf .", sep="\n")
+			"Literature: Bretz, F., Maurer, W., Brannath, W., Posch, M.: A graphical approach to sequentially rejective multiple test procedures. Statistics in Medicine 2009 vol. 28 issue 4 page 586-604. URL: https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf .", sep="\n")
 	return(graph)
 }
 
@@ -1022,7 +1022,7 @@ WangTing2014 <- function(nu, tau) {
                                       "with \\nu=\\epsilon, \\tau=\\epsilon graph from figure 5.",
                                       "",
                                       "Literature: Wang, B., Ting, N. (2014). An Application of Graphical Approach to Construct Multiple Testing Procedures in a Hypothetical Phase III Design. Frontiers in public health, 1 (75).",
-                                      "URL: http://journal.frontiersin.org/Journal/10.3389/fpubh.2013.00075/full", sep="\n")
+                                      "URL: https://www.frontiersin.org/articles/10.3389/fpubh.2013.00075/full", sep="\n")
 
   variables <- list()
   if (!missing(nu)) variables[["nu"]] <- nu
