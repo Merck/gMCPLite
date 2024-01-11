@@ -30,12 +30,12 @@ knitr::opts_chunk$set(
 
 This document is intended to evaluate statistical significance for graphical multiplicity control when used with group sequential design [@MaurerBretz2013]. In particular, we demonstrate design and analysis of a complex oncology trial.
 There are many details building on the necessarily simple example provided by @MaurerBretz2013.
-The combination of tools provided by the **gMCPLite** and **gsDesign** packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
+The combination of tools provided by the gMCPLite and gsDesign packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
 This has been found to be particularly valuable to provide a prompt and verifiable conclusion in multiple trials such as @KEYNOTE048 where 14 hypotheses were evaluated using a template such as this.
 
 Given the complexity involved, substantial effort has been taken to provide methods to check hypothesis testing.
 
-- The initial testing is done by using sequential p-values [@LiuAnderson2008] which can then be plugged into standard graphical hypothesis testing R package, **gMCP** [@Bretz2009].
+- The initial testing is done by using sequential p-values [@LiuAnderson2008] which can then be plugged into standard graphical hypothesis testing R package, gMCP [@Bretz2009].
 - The graphical testing produces a sequence including the original multiplicity graph, followed by updated multiplicity graphs, each with a single hypothesis rejected from the previous graph.
 - The final graph, assuming not all hypotheses were rejected, provides the final Type I error available for testing each hypothesis that was not rejected.
 - Updated group sequential bounds for each hypothesis at the largest alpha-level it was evaluated can be checked vs. nominal p-values at each analysis to verify the testing conclusions reached with the above methods.
@@ -653,7 +653,7 @@ options(old)
 ## Session information
 
 You can use `sessionInfo()` to document the versions of R and R packages used to render this document.
-Note, in particular, that version 3.1 or later of the **gsDesign** package is needed.
+Note, in particular, that version 3.1 or later of the gsDesign package is needed.
 
 ## References
 
