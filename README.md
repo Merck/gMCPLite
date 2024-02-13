@@ -15,6 +15,8 @@ with the following features:
   It bridges gMCP result objects and gsDesign to produce
   multiple comparison graphs and sequential graph updates.
 
+A [Shiny app](https://rinpharma.shinyapps.io/gmcp/) is also available to generate graphs of multiple comparisons and update graphs based on graphical approach.
+
 ## Installation
 
 ```r
