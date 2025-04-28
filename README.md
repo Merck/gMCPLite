@@ -2,8 +2,9 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/Merck/gMCPLite/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Merck/gMCPLite/actions/workflows/R-CMD-check.yaml)
-[![test-coverage](https://github.com/Merck/gMCPLite/workflows/test-coverage/badge.svg)](https://github.com/Merck/gMCPLite/actions)
 [![Codecov test coverage](https://codecov.io/gh/Merck/gMCPLite/graph/badge.svg)](https://app.codecov.io/gh/Merck/gMCPLite)
+[![CRAN status](https://www.r-pkg.org/badges/version/gMCPLite)](https://cran.r-project.org/package=gMCPLite)
+[![CRAN Downloads](https://cranlogs.r-pkg.org/badges/gMCPLite)](https://cran.r-project.org/package=gMCPLite)
 <!-- badges: end -->
 
 gMCPLite is a fork of gMCP for graph-based multiple comparison procedures,
