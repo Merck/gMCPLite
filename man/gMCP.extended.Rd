@@ -87,7 +87,6 @@ gMCP(g3, pvalues=c(0.01, 0.02, 0.04, 0.04, 0.7), correlation=diag(5))
 Frank Bretz, Willi Maurer, Werner Brannath, Martin Posch: A
 graphical approach to sequentially rejective multiple test procedures.
 Statistics in Medicine 2009 vol. 28 issue 4 page 586-604.
-\url{https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
 
 Bretz F., Posch M., Glimm E., Klinglmueller F., Maurer W., Rohmeyer K.
 (2011): Graphical approaches for multiple endpoint problems using weighted
