@@ -1,3 +1,16 @@
+# gMCPLite 0.1.6
+
+## Testing
+
+- Added vdiffr-based visual regression tests for `hGraph()` (@nanxstats, #35).
+
+## Maintenance
+
+- Linked the gMCPShiny app from the README (@XDeng0921, #30).
+- Removed invalid URLs from roxygen2 documentation (@nanxstats, #33).
+- Updated the pkgdown site: navbar styling for pkgdown >= 2.1.0 and refreshed
+  favicon assets (@nanxstats, #34).
+
 # gMCPLite 0.1.5
 
 - In `hGraph()`, the `scale_fill_manual()` call now has the `guide`
@@ -38,5 +51,5 @@
 # gMCPLite 0.1.0
 
 - Created a fork from gMCP 0.8-15 and removed Java dependencies.
-- Ported the `hGraph()` function from gsDesign 3.3.0, removed dependencies of 
+- Ported the `hGraph()` function from gsDesign 3.3.0, removed dependencies of
   dplyr, tidyr and magrittr, and updated the default `wchar` to the Unicode alpha.
