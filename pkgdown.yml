@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   GraphicalMultiplicity: GraphicalMultiplicity.html
   hGraph: hGraph.html
-last_built: 2025-08-26T03:35Z
+last_built: 2025-08-26T03:51Z
 urls:
   reference: https://merck.github.io/gMCPLite/reference
   article: https://merck.github.io/gMCPLite/articles
