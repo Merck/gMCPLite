@@ -83,7 +83,6 @@
 #' Bretz, F., Maurer, W., Brannath, W., Posch, M.: A graphical approach to
 #' sequentially rejective multiple test procedures. Statistics in Medicine 2009
 #' vol. 28 issue 4 page 586-604.
-#' \url{https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf}
 #'
 #' Bretz, F., Maurer, W. and Hommel, G. (2011), Test and power considerations
 #' for multiple endpoint analyses using sequentially rejective graphical
@@ -448,7 +447,7 @@ improvedParallelGatekeeping <- function() {
 	edgeAttr(graph, "H4", "H2", "labelY") <- 200
 	attr(graph, "description") <- paste("Graph representing an improved parallel gatekeeping procedure",
 			"",
-			"Literature: Bretz, F., Maurer, W., Brannath, W., Posch, M.: A graphical approach to sequentially rejective multiple test procedures. Statistics in Medicine 2009 vol. 28 issue 4 page 586-604. URL: https://www.meduniwien.ac.at/fwf_adaptive/papers/bretz_2009_22.pdf .", sep="\n")
+			"Literature: Bretz, F., Maurer, W., Brannath, W., Posch, M.: A graphical approach to sequentially rejective multiple test procedures. Statistics in Medicine 2009 vol. 28 issue 4 page 586-604.", sep="\n")
 	return(graph)
 }
 
