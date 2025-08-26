@@ -1,6 +1,6 @@
 Package: gMCPLite
 Title: Lightweight Graph Based Multiple Comparison Procedures
-Version: 0.1.5
+Version: 0.1.6
 Authors@R: c(
     person("Yalin", "Zhu", email = "yalin.zhu@outlook.com", role = "aut",
            comment = c(ORCID = "0000-0003-3830-8660")),
