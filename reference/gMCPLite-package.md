@@ -24,8 +24,7 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Nan Xiao <nan.xiao1@merck.com>
-([ORCID](https://orcid.org/0000-0002-0250-5673))
+**Maintainer**: Keaven Anderson <keaven_anderson@merck.com>
 
 Authors:
 
@@ -36,7 +35,7 @@ Authors:
 
 - Xuan Deng <xuan.deng@merck.com>
 
-- Keaven Anderson <keaven_anderson@merck.com>
+- Nan Xiao ([ORCID](https://orcid.org/0000-0002-0250-5673))
 
 Other contributors:
 

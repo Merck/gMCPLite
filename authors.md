@@ -8,10 +8,9 @@
 
 - **Xuan Deng**. Author.
 
-- **Keaven Anderson**. Author.
+- **Keaven Anderson**. Author, maintainer.
 
-- **Nan Xiao**. Author, maintainer.
-  [](https://orcid.org/0000-0002-0250-5673)
+- **Nan Xiao**. Author. [](https://orcid.org/0000-0002-0250-5673)
 
 - **Kornelius Rohmeyer**. Contributor.  
   gMCP author
@@ -32,13 +31,13 @@ Source:
 
 Zhu Y, Zhang Y, Deng X, Anderson K, Xiao N (2026). *gMCPLite:
 Lightweight Graph Based Multiple Comparison Procedures*. R package
-version 0.1.6, <https://merck.github.io/gMCPLite/>.
+version 0.1.7, <https://merck.github.io/gMCPLite/>.
 
     @Manual{,
       title = {gMCPLite: Lightweight Graph Based Multiple Comparison Procedures},
       author = {Yalin Zhu and Yilong Zhang and Xuan Deng and Keaven Anderson and Nan Xiao},
       year = {2026},
-      note = {R package version 0.1.6},
+      note = {R package version 0.1.7},
       url = {https://merck.github.io/gMCPLite/},
     }
 
