@@ -1,3 +1,11 @@
+# gMCPLite 0.1.7
+
+## Maintenance
+
+- Snapshot files are now included in the built package to satisfy
+  testthat (>= 3.3.0) requirements (#40).
+- Update maintainer email (#39).
+
 # gMCPLite 0.1.6
 
 ## Testing

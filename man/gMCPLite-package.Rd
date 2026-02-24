@@ -20,14 +20,14 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Nan Xiao \email{nan.xiao1@merck.com} (\href{https://orcid.org/0000-0002-0250-5673}{ORCID})
+\strong{Maintainer}: Keaven Anderson \email{keaven_anderson@merck.com}
 
 Authors:
 \itemize{
   \item Yalin Zhu \email{yalin.zhu@outlook.com} (\href{https://orcid.org/0000-0003-3830-8660}{ORCID})
   \item Yilong Zhang \email{elong0527@gmail.com}
   \item Xuan Deng \email{xuan.deng@merck.com}
-  \item Keaven Anderson \email{keaven_anderson@merck.com}
+  \item Nan Xiao (\href{https://orcid.org/0000-0002-0250-5673}{ORCID})
 }
 
 Other contributors:

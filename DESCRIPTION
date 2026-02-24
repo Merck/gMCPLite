@@ -1,14 +1,13 @@
 Package: gMCPLite
 Title: Lightweight Graph Based Multiple Comparison Procedures
-Version: 0.1.6
+Version: 0.1.7
 Authors@R: c(
     person("Yalin", "Zhu", email = "yalin.zhu@outlook.com", role = "aut",
            comment = c(ORCID = "0000-0003-3830-8660")),
     person("Yilong", "Zhang", email = "elong0527@gmail.com", role = "aut"),
     person("Xuan", "Deng", email = "xuan.deng@merck.com", role = "aut"),
-    person("Keaven", "Anderson", email = "keaven_anderson@merck.com", role = "aut"),
-    person("Nan", "Xiao", email = "nan.xiao1@merck.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-0250-5673")),
+    person("Keaven", "Anderson", email = "keaven_anderson@merck.com", role = c("aut", "cre")),
+    person("Nan", "Xiao", role = "aut", comment = c(ORCID = "0000-0002-0250-5673")),
     person("Kornelius", "Rohmeyer", email = "rohmeyer@small-projects.de", role = "ctb",
            comment = "gMCP author"),
     person("Florian", "Klinglmueller", email = "float@lefant.net", role = "ctb",
@@ -58,4 +57,4 @@ Suggests:
     tibble,
     vdiffr
 Config/testthat/edition: 3
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
