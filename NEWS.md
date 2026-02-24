@@ -1,3 +1,9 @@
+# gMCPLite 0.1.7
+
+## Maintenance
+
+- Update maintainer email (#39).
+
 # gMCPLite 0.1.6
 
 ## Testing
