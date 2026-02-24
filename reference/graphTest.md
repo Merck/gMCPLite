@@ -1,0 +1,276 @@
+# Multiple testing using graphs
+
+Implements the graphical test procedure described in Bretz et al.
+(2009). Note that the gMCP function in the gMCP package performs the
+same task.
+
+## Usage
+
+``` r
+graphTest(
+  pvalues,
+  weights = NULL,
+  alpha = 0.05,
+  G = NULL,
+  cr = NULL,
+  graph = NULL,
+  verbose = FALSE,
+  test,
+  upscale = FALSE
+)
+```
+
+## Arguments
+
+- pvalues:
+
+  Either a vector or a matrix containing the local p-values for the
+  hypotheses in the rows.
+
+- weights:
+
+  Initial weight levels for the test procedure, in case of multiple
+  graphs this needs to be a matrix.
+
+- alpha:
+
+  Overall alpha level of the procedure. For entangled graphs `alpha`
+  should be a numeric vector of length equal to the number of graphs,
+  each element specifying the partial alpha for the respective graph.
+  The overall alpha level equals `sum(alpha)`.
+
+- G:
+
+  For simple graphs `G` should be a numeric matrix determining the graph
+  underlying the test procedure. Note that the diagonal need to contain
+  only 0s, while the rows need to sum to 1. For entangled graphs it
+  needs to be a list containing the different graph matrices as
+  elements.
+
+- cr:
+
+  Correlation matrix that should be used for the parametric test. If
+  `cr==NULL` the Bonferroni based test procedure is used.
+
+- graph:
+
+  As an alternative to the specification via `weights` and `G` one can
+  also hand over a `graphMCP` object to the code. `graphMCP` objects can
+  be created for example with the `graphGUI` function.
+
+- verbose:
+
+  If verbose is TRUE, additional information about the graphical
+  rejection procedure is displayed.
+
+- test:
+
+  In the parametric case there is more than one way to handle subgraphs
+  with less than the full alpha. If the parameter `test` is missing, the
+  tests are performed as described by Bretz et al. (2011), i.e. tests of
+  intersection null hypotheses always exhaust the full alpha level even
+  if the sum of weights is strictly smaller than one. If
+  `test="simple-parametric"` the tests are performed as defined in
+  Equation (3) of Bretz et al. (2011).
+
+- upscale:
+
+  Logical. If `upscale=FALSE` then for each intersection of hypotheses
+  (i.e. each subgraph) a weighted test is performed at the possibly
+  reduced level alpha of sum(w)\*alpha, where sum(w) is the sum of all
+  node weights in this subset. If `upscale=TRUE` all weights are
+  upscaled, so that sum(w)=1.
+
+## Value
+
+A vector or a matrix containing the test results for the hypotheses
+under consideration. Significant tests are denoted by a 1,
+non-significant results by a 0.
+
+## References
+
+Bretz, F., Maurer, W., Brannath, W. and Posch, M. (2009) A graphical
+approach to sequentially rejective multiple test procedures. Statistics
+in Medicine, 28, 586–604
+
+Bretz, F., Maurer, W. and Hommel, G. (2010) Test and power
+considerations for multiple endpoint analyses using sequentially
+rejective graphical procedures, to appear in Statistics in Medicine
+
+## Examples
+
+``` r
+
+#### example from Bretz et al. (2010)
+weights <- c(1/3, 1/3, 1/3, 0, 0, 0)
+graph <- rbind(c(0,       0.5, 0,     0.5, 0,      0),
+               c(1/3,     0,   1/3,    0,   1/3,    0),
+               c(0,       0.5, 0,     0,   0,      0.5),
+               c(0,       1,   0,     0,   0,      0),
+               c(0.5,     0,   0.5,   0,   0,      0),
+               c(0,       1,   0,     0,   0,      0))
+pvals <- c(0.1, 0.008, 0.005, 0.15, 0.04, 0.006)
+graphTest(pvals, weights, alpha=0.025, graph)
+#> H1 H2 H3 H4 H5 H6 
+#>  0  1  1  0  0  1 
+#> attr(,"last.alphas")
+#> [1] 0.016666667 0.000000000 0.000000000 0.000000000 0.008333333
+#> [6] 0.000000000
+#> attr(,"last.G")
+#>      [,1] [,2] [,3]      [,4]      [,5] [,6]
+#> [1,]  0.0    0    0 0.6666667 0.3333333    0
+#> [2,]  0.0    0    0 0.0000000 0.0000000    0
+#> [3,]  0.0    0    0 0.0000000 0.0000000    0
+#> [4,]  0.5    0    0 0.0000000 0.5000000    0
+#> [5,]  1.0    0    0 0.0000000 0.0000000    0
+#> [6,]  0.0    0    0 0.0000000 0.0000000    0
+
+## observe graphical procedure in detail
+graphTest(pvals, weights, alpha=0.025, graph, verbose = TRUE)
+#> ------------------------------------------------------------------
+#> Reject hypothesis 2
+#> Updated alphas and graph:
+#> 
+#> a1: 0.011 a2: 0.000 a3: 0.011 a4: 0.000 a5: 0.003 a6: 0.000 
+#> 
+#> G11: 0.000 G12: 0.000 G13: 0.200 G14: 0.600 G15: 0.200 G16: 0.000 
+#> G21: 0.000 G22: 0.000 G23: 0.000 G24: 0.000 G25: 0.000 G26: 0.000 
+#> G31: 0.200 G32: 0.000 G33: 0.000 G34: 0.000 G35: 0.200 G36: 0.600 
+#> G41: 0.333 G42: 0.000 G43: 0.333 G44: 0.000 G45: 0.333 G46: 0.000 
+#> G51: 0.500 G52: 0.000 G53: 0.500 G54: 0.000 G55: 0.000 G56: 0.000 
+#> G61: 0.333 G62: 0.000 G63: 0.333 G64: 0.000 G65: 0.333 G66: 0.000 
+#> 
+#> ------------------------------------------------------------------
+#> Reject hypothesis 3
+#> Updated alphas and graph:
+#> 
+#> a1: 0.013 a2: 0.000 a3: 0.000 a4: 0.000 a5: 0.005 a6: 0.007 
+#> 
+#> G11: 0.000 G12: 0.000 G13: 0.000 G14: 0.625 G15: 0.250 G16: 0.125 
+#> G21: 0.000 G22: 0.000 G23: 0.000 G24: 0.000 G25: 0.000 G26: 0.000 
+#> G31: 0.000 G32: 0.000 G33: 0.000 G34: 0.000 G35: 0.000 G36: 0.000 
+#> G41: 0.400 G42: 0.000 G43: 0.000 G44: 0.000 G45: 0.400 G46: 0.200 
+#> G51: 0.667 G52: 0.000 G53: 0.000 G54: 0.000 G55: 0.000 G56: 0.333 
+#> G61: 0.500 G62: 0.000 G63: 0.000 G64: 0.000 G65: 0.500 G66: 0.000 
+#> 
+#> ------------------------------------------------------------------
+#> Reject hypothesis 6
+#> Updated alphas and graph:
+#> 
+#> a1: 0.017 a2: 0.000 a3: 0.000 a4: 0.000 a5: 0.008 a6: 0.000 
+#> 
+#> G11: 0.000 G12: 0.000 G13: 0.000 G14: 0.667 G15: 0.333 G16: 0.000 
+#> G21: 0.000 G22: 0.000 G23: 0.000 G24: 0.000 G25: 0.000 G26: 0.000 
+#> G31: 0.000 G32: 0.000 G33: 0.000 G34: 0.000 G35: 0.000 G36: 0.000 
+#> G41: 0.500 G42: 0.000 G43: 0.000 G44: 0.000 G45: 0.500 G46: 0.000 
+#> G51: 1.000 G52: 0.000 G53: 0.000 G54: 0.000 G55: 0.000 G56: 0.000 
+#> G61: 0.000 G62: 0.000 G63: 0.000 G64: 0.000 G65: 0.000 G66: 0.000 
+#> 
+#> H1 H2 H3 H4 H5 H6 
+#>  0  1  1  0  0  1 
+#> attr(,"last.alphas")
+#> [1] 0.016666667 0.000000000 0.000000000 0.000000000 0.008333333
+#> [6] 0.000000000
+#> attr(,"last.G")
+#>      [,1] [,2] [,3]      [,4]      [,5] [,6]
+#> [1,]  0.0    0    0 0.6666667 0.3333333    0
+#> [2,]  0.0    0    0 0.0000000 0.0000000    0
+#> [3,]  0.0    0    0 0.0000000 0.0000000    0
+#> [4,]  0.5    0    0 0.0000000 0.5000000    0
+#> [5,]  1.0    0    0 0.0000000 0.0000000    0
+#> [6,]  0.0    0    0 0.0000000 0.0000000    0
+
+## now use many p-values (useful for power simulations)
+pvals <- matrix(rbeta(6e4, 1, 30), ncol = 6)
+out <- graphTest(pvals, weights, alpha=0.025, graph)
+head(out)
+#>      H1 H2 H3 H4 H5 H6
+#> [1,]  0  0  0  0  0  0
+#> [2,]  0  1  1  0  1  0
+#> [3,]  0  0  1  0  0  0
+#> [4,]  0  1  1  0  0  0
+#> [5,]  0  0  0  0  0  0
+#> [6,]  0  0  0  0  0  0
+# example using multiple graphs (instead of 1)
+G1 <- rbind(c(0,0.5,0.5,0,0), c(0,0,1,0,0),
+            c(0, 0, 0, 1-0.01, 0.01), c(0, 1, 0, 0, 0),
+            c(0, 0, 0, 0, 0))
+G2 <- rbind(c(0,0,1,0,0), c(0.5,0,0.5,0,0),
+            c(0, 0, 0, 0.01, 1-0.01), c(0, 0, 0, 0, 0),
+            c(1, 0, 0, 0, 0))
+weights <- rbind(c(1, 0, 0, 0, 0), c(0, 1, 0, 0, 0))
+pvals <- c(0.012, 0.025, 0.005, 0.0015, 0.0045)
+out <- graphTest(pvals, weights, alpha=c(0.0125, 0.0125), G=list(G1, G2), verbose = TRUE)
+#> ------------------------------------------------------------------
+#> Reject hypothesis 1
+#> Updated alphas and graphs:
+#> 
+#> a11: 0.000 a12: 0.006 a13: 0.006 a14: 0.000 a15: 0.000 
+#> 
+#> G1,11: 0.000 G1,12: 0.000 G1,13: 0.000 G1,14: 0.000 G1,15: 0.000 
+#> G1,21: 0.000 G1,22: 0.000 G1,23: 1.000 G1,24: 0.000 G1,25: 0.000 
+#> G1,31: 0.000 G1,32: 0.000 G1,33: 0.000 G1,34: 0.990 G1,35: 0.010 
+#> G1,41: 0.000 G1,42: 1.000 G1,43: 0.000 G1,44: 0.000 G1,45: 0.000 
+#> G1,51: 0.000 G1,52: 0.000 G1,53: 0.000 G1,54: 0.000 G1,55: 0.000 
+#> 
+#> a21: 0.000 a22: 0.013 a23: 0.000 a24: 0.000 a25: 0.000 
+#> 
+#> G2,11: 0.000 G2,12: 0.000 G2,13: 0.000 G2,14: 0.000 G2,15: 0.000 
+#> G2,21: 0.000 G2,22: 0.000 G2,23: 1.000 G2,24: 0.000 G2,25: 0.000 
+#> G2,31: 0.000 G2,32: 0.000 G2,33: 0.000 G2,34: 0.010 G2,35: 0.990 
+#> G2,41: 0.000 G2,42: 0.000 G2,43: 0.000 G2,44: 0.000 G2,45: 0.000 
+#> G2,51: 0.000 G2,52: 0.000 G2,53: 1.000 G2,54: 0.000 G2,55: 0.000 
+#> 
+#> ------------------------------------------------------------------
+#> Reject hypothesis 3
+#> Updated alphas and graphs:
+#> 
+#> a11: 0.000 a12: 0.006 a13: 0.000 a14: 0.006 a15: 0.000 
+#> 
+#> G1,11: 0.000 G1,12: 0.000 G1,13: 0.000 G1,14: 0.000 G1,15: 0.000 
+#> G1,21: 0.000 G1,22: 0.000 G1,23: 0.000 G1,24: 0.990 G1,25: 0.010 
+#> G1,31: 0.000 G1,32: 0.000 G1,33: 0.000 G1,34: 0.000 G1,35: 0.000 
+#> G1,41: 0.000 G1,42: 1.000 G1,43: 0.000 G1,44: 0.000 G1,45: 0.000 
+#> G1,51: 0.000 G1,52: 0.000 G1,53: 0.000 G1,54: 0.000 G1,55: 0.000 
+#> 
+#> a21: 0.000 a22: 0.013 a23: 0.000 a24: 0.000 a25: 0.000 
+#> 
+#> G2,11: 0.000 G2,12: 0.000 G2,13: 0.000 G2,14: 0.000 G2,15: 0.000 
+#> G2,21: 0.000 G2,22: 0.000 G2,23: 0.000 G2,24: 0.010 G2,25: 0.990 
+#> G2,31: 0.000 G2,32: 0.000 G2,33: 0.000 G2,34: 0.000 G2,35: 0.000 
+#> G2,41: 0.000 G2,42: 0.000 G2,43: 0.000 G2,44: 0.000 G2,45: 0.000 
+#> G2,51: 0.000 G2,52: 0.000 G2,53: 0.000 G2,54: 1.000 G2,55: 0.000 
+#> 
+#> ------------------------------------------------------------------
+#> Reject hypothesis 4
+#> Updated alphas and graphs:
+#> 
+#> a11: 0.000 a12: 0.012 a13: 0.000 a14: 0.000 a15: 0.000 
+#> 
+#> G1,11: 0.000 G1,12: 0.000 G1,13: 0.000 G1,14: 0.000 G1,15: 0.000 
+#> G1,21: 0.000 G1,22: 0.000 G1,23: 0.000 G1,24: 0.000 G1,25: 1.000 
+#> G1,31: 0.000 G1,32: 0.000 G1,33: 0.000 G1,34: 0.000 G1,35: 0.000 
+#> G1,41: 0.000 G1,42: 0.000 G1,43: 0.000 G1,44: 0.000 G1,45: 0.000 
+#> G1,51: 0.000 G1,52: 0.000 G1,53: 0.000 G1,54: 0.000 G1,55: 0.000 
+#> 
+#> a21: 0.000 a22: 0.013 a23: 0.000 a24: 0.000 a25: 0.000 
+#> 
+#> G2,11: 0.000 G2,12: 0.000 G2,13: 0.000 G2,14: 0.000 G2,15: 0.000 
+#> G2,21: 0.000 G2,22: 0.000 G2,23: 0.000 G2,24: 0.000 G2,25: 0.990 
+#> G2,31: 0.000 G2,32: 0.000 G2,33: 0.000 G2,34: 0.000 G2,35: 0.000 
+#> G2,41: 0.000 G2,42: 0.000 G2,43: 0.000 G2,44: 0.000 G2,45: 0.000 
+#> G2,51: 0.000 G2,52: 0.000 G2,53: 0.000 G2,54: 0.000 G2,55: 0.000 
+#> 
+
+## now again with many p-values
+pvals <- matrix(rbeta(5e4, 1, 30), ncol = 5)
+out <- graphTest(pvals, weights, alpha=c(0.0125, 0.0125), G=list(G1, G2))
+head(out)
+#>      H1 H2 H3 H4 H5
+#> [1,]  0  0  0  0  0
+#> [2,]  1  0  0  0  0
+#> [3,]  1  0  0  0  0
+#> [4,]  1  0  0  0  0
+#> [5,]  0  0  0  0  0
+#> [6,]  0  0  0  0  0
+```
