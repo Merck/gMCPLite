@@ -27,7 +27,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/Merck/gMCPLite/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/Merck/gMCPLite/blob/v0.1.7/DESCRIPTION)
 
 Zhu Y, Zhang Y, Deng X, Anderson K, Xiao N (2026). *gMCPLite:
 Lightweight Graph Based Multiple Comparison Procedures*. R package

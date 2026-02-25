@@ -2,6 +2,8 @@
 
 ## gMCPLite 0.1.7
 
+CRAN release: 2026-02-25
+
 ### Maintenance
 
 - Snapshot files are now included in the built package to satisfy
