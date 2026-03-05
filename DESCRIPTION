@@ -47,7 +47,9 @@ Suggests:
     graphicalMCP,
     gridExtra,
     gsDesign,
+    gsDesign2,
     gt,
+    igraph,
     kableExtra,
     knitr,
     multcomp,
@@ -56,6 +58,7 @@ Suggests:
     scales,
     testthat (>= 3.0.0),
     tibble,
-    vdiffr
+    vdiffr,
+    wpgsd
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3

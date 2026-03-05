@@ -1,0 +1,995 @@
+---
+title: "Iterative graphical testing for group sequential design using graphicalMCP and wpgsd"
+subtitle: "Weighted parametric group sequential design with correlated tests"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 2
+bibliography: gMCPLite.bib
+vignette: >
+  %\VignetteIndexEntry{Iterative graphical testing for group sequential design using graphicalMCP and wpgsd}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>",
+  dev = "ragg_png",
+  dpi = 96,
+  fig.retina = 1,
+  fig.width = 7.2916667,
+  fig.asp = 0.618,
+  fig.align = "center",
+  out.width = "80%"
+)
+```
+
+## Overview
+
+This document is intended to evaluate statistical significance for graphical multiplicity control when used with group sequential design [@MaurerBretz2013]. In particular, we demonstrate design and analysis of a complex oncology trial.
+There are many details building on the necessarily simple example provided by @MaurerBretz2013.
+The combination of tools provided by the wpgsd and gsDesign packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
+This has been found to be particularly valuable to provide a prompt and verifiable conclusion in multiple trials such as @KEYNOTE048 where 14 hypotheses were evaluated using a template such as this.
+
+This vignette focuses on combining:
+
+- graphical multiplicity updating using **graphicalMCP** (graph specification and alpha reallocation),
+- weighted parametric group sequential testing using **wpgsd**.
+
+For comparison, see:
+
+- [Graphical testing for group sequential design](GraphicalMultiplicity.html) (original approach),
+- [Group sequential design using the graphicalMCP package using hgraph](graphicalMCPgsd.html) (graphicalMCP shortcut testing variant).
+
+The development version of wpgsd can be installed with `remotes::install_github("keaven/wpgsd")`.
+
+Given the complexity involved, substantial effort has been taken to provide methods to check hypothesis testing.
+
+- Under the overall graphical procedure, the current Type I error available for each hypothesis changes as hypotheses are rejected.
+- For each endpoint family (OS and PFS), weighted parametric group sequential bounds are computed and evaluated using `wpgsd`.
+- After any rejections, the overall graph is updated using `graphicalMCP`, and OS and PFS families are evaluated again until no further rejections occur.
+
+The table of contents above lays out the organization of the document.
+In short, we begin with 1) design specification followed by 2) results entry which includes event counts and nominal p-values for testing, 3) carrying out hypothesis testing, and 4) verification of the hypothesis testing results.
+
+## Design
+
+For the template example, there are 3 endpoints and 2 populations resulting in 6 hypotheses to be tested in the trial.
+The endpoints are:
+
+- Overall survival (OS)
+- Progression free survival (PFS)
+- Objective response rate (ORR)
+
+The populations to be studied are:
+
+- The overall population (All subjects)
+- A subgroup (Subgroup)
+
+For simplicity, we design assuming the control group has an exponential time to event with a median of 12 months for OS and 5 months for PFS.
+We design under a proportional hazards assumption.
+ORR for the control group is assumed to be 15%.
+Some of the choices here are arbitrary, but the intent is to fully specify how patients will be enrolled and followed for $\alpha$-controlled study analyses.
+
+The following design characteristics are also specified to well-characterize outcomes for all subjects by the end of the trial:
+
+- Enrollment is assumed to occur over 18 months. Enrollment will continue until the targeted number of subjects has been enrolled in the subgroup to ensure power as planned for that population. This means, the overall population sample size will be random and power may vary from that planned here.
+The enrollment increases from 25% in the first two months to 50% in the second 2 months to 75% in the third two months of the final steady state enrollment which continues from the end of month 6 of enrollment until final enrollment expected at 18 months.
+- The first interim analysis will be conducted 6 months after final patient enrolled to adequately assess ORR for all patients. Thus, the analysis is planned at 24 months after start of study enrollment, but will be adapted according to when final enrollment is completed.
+This is the only analysis for ORR and is an interim analysis for PFS and OS with whatever event counts are available at the cutoff.
+- The second interim analysis will be conducted 14 months after final enrollment to ensure minimum follow-up almost 3 times the assumed control median PFS for all subjects. This would be delayed up to 3 months if the final targeted event count for PFS in the subgroup is not achieved at that time. This is to ensure a complete description of tail behavior for PFS in the case a PFS curve has a plateau. PFS and OS will be analyzed. The endpoint counts for OS and for the overall population for PFS are random since the cutoff is determined by the PFS endpoint count for the subgroup.
+- The final analysis will be performed 24 months after final enrollment, ensuring 2 times the assumed median control survival as minimum follow-up for all subjects. Only analysis of OS is planned. The final analysis may be delayed up to 6 months if the targeted OS event count in the subgroup is not achieved. Thus, the planned total duration of the trial for the OS endpoint is 42 months.
+
+The sample size for the trial will be driven by an adequate sample size and targeted events in the subgroup to ensure 90% power for the OS endpoint assuming a hazard ratio of 0.65.
+For group sequential designs, we assume 1-sided testing.
+
+To reveal code blocks for the remainder of the document, press the code buttons indicated throughout.
+The initial code block sets options and loads needed packages; no modification should be required by the user.
+
+```{r, message=FALSE, warning=FALSE}
+### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
+# Prefer fixed notation
+old <- options(scipen = 999)
+# Colorblind palette
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+# 2 packages used for data storage and manipulation: dplyr, tibble
+library(dplyr)
+library(tibble)
+# 2 packages used for R Markdown capabilities: knitr, kableExtra
+library(knitr)
+library(kableExtra)
+library(gt)
+library(ggplot2) # For plotting
+library(gsDesign) # Group sequential design capabilities
+library(graphicalMCP) # Graph-based multiplicity evaluation
+library(wpgsd) # Weighted parametric group sequential design
+```
+
+### Multiplicity diagram for hypothesis testing
+
+Following is the multiplicity graph for the trial design.
+We have arbitrarily split Type I error equally between the subgroup and overall populations.
+Most $\alpha$ is allocated to OS and the least to ORR, with PFS receiving an intermediate amount.
+This reflects the priority of the endpoints as well as the practicality to detect clinically significant differences in each population.
+Reallocation for each endpoint proceeds from the subgroup to the overall population.
+If the overall population hypothesis is rejected for a given endpoint, the reallocation is split between the two populations for another endpoint.
+The choice for allocation and reallocation illustrated here is to demonstrate a complex multiplicity scenario; when actually applying this method the allocation and reallocation choices should be carefully considered.
+
+```{r, warning=FALSE, message=FALSE, fig.asp=0.9}
+### THIS CODE NEEDS TO BE MODIFIED FOR YOUR STUDY
+# Hypothesis names
+nameHypotheses <- c(
+  "H1: OS\n Subgroup",
+  "H2: OS\n All subjects",
+  "H3: PFS\n Subgroup",
+  "H4: PFS\n All subjects",
+  "H5: ORR\n Subgroup",
+  "H6: ORR\n All subjects"
+)
+# Number of hypotheses to be tested
+nHypotheses <- length(nameHypotheses)
+# Transition weights for alpha reallocation (square matrix)
+m <- matrix(c(
+  0, 1, 0, 0, 0, 0,
+  0, 0, .5, .5, 0, 0,
+  0, 0, 0, 1, 0, 0,
+  0, 0, 0, 0, .5, .5,
+  0, 0, 0, 0, 0, 1,
+  .5, .5, 0, 0, 0, 0
+), nrow = 6, byrow = TRUE)
+# Initial Type I error assigned to each hypothesis (one-sided)
+alphaHypotheses <- c(.01, .01, .004, 0.000, 0.0005, .0005)
+fwer <- sum(alphaHypotheses)
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = alphaHypotheses / fwer,
+  transitions = m,
+  hyp_names = nameHypotheses
+)
+
+layout6 <- rbind(
+  c(0.28, 0.78),
+  c(0.72, 0.78),
+  c(0.18, 0.50),
+  c(0.82, 0.50),
+  c(0.28, 0.22),
+  c(0.72, 0.22)
+)
+
+plot(g0,
+  layout = layout6,
+  vertex.size = 45,
+  vertex.label.cex = 0.9
+)
+```
+
+This testing scheme can result in what might be referred to as time travel for passing of $\alpha$.
+That is, if PFS hypotheses are not rejected at a given analysis (say final PFS analysis) and OS hypotheses are rejected at the final analysis, then the previously evaluated PFS tests at the interim and final PFS analysis can be compared to updated bounds based on reallocated Type I error.
+While this practice was not encouraged by @MaurerBretz2013, it was acknowledged to control Type I error as previous discussed in [@LiuAnderson2008].
+Given the stringent Type I error control for multiple hypotheses, the ability to acknowledge clinically significant differences as statistically significant can be important in describing treatment benefits in regulatory labeling for a treatment.
+
+### Group sequential designs for each hypothesis {.tabset}
+
+For the example, we assume 1-sided testing or a non-binding futility bound as required for a @MaurerBretz2013 design using group sequential design with graphical multiplicity control.
+Each is demonstrated in the example code for respective hypotheses.
+Efficacy $\alpha$-spending for all group sequential designs uses the @LanDeMets spending function approximating an O'Brien-Fleming bound.
+
+This section needs to be modified by the user to match the study design under consideration.
+Those uncomfortable with coding may wish to design using the
+[gsDesign Shiny app](https://gsdesign.shinyapps.io/prod/) which provides not only a point and click interface, but also a code tab that generates R code that can be copied and plugged in for designs below.
+
+#### H1: OS, Subgroup
+
+We assume 50% of the population is in the subgroup of interest.
+A sample size of 378 is driven by overall survival (OS) in the subgroup where we assume a hazard ratio of 0.65.
+Here we assume a one-sided group sequential design with no futility bound.
+
+```{r, results='asis'}
+osmedian <- 12 # Median control survival
+# Derive group sequential design for OS in the targeted subgroup
+ossub <- gsDesign::gsSurv(
+  k = 3, # 3 analyses for OS
+  test.type = 1, # Efficacy bound only (no futility)
+  alpha = alphaHypotheses[1], # Allocated alpha from design hypothesis group
+  beta = 0.1, # Type 2 error (1 - power)
+  hr = 0.65, # Assumed hazard ratio for power calculation
+  timing = c(0.61, 0.82), # Choose these to match targeted calendar timing of analyses
+  sfu = sfLDOF, # Spending function to approximate O'Brien-Fleming bound
+  lambdaC = log(2) / osmedian, # Exponential control failure rate
+  eta = 0.001, # Exponential dropout rate
+  gamma = c(2.5, 5, 7.5, 10), # Relative enrollment rates by time period
+  R = c(2, 2, 2, 12), # Duration of time periods for rates in gamma
+  T = 42, # Planned study duration for OS
+  minfup = 24 # Planned minimum follow-up after end of enrollment
+)
+tab <- gsDesign::gsBoundSummary(ossub)
+rownames(tab) <- 1:nrow(tab)
+cat(summary(ossub))
+```
+
+The above text was automatically generated and could be edited appropriately for description of the design.
+Following is a summary table describing study bounds.
+
+```{r}
+# tab %>% kable(caption = "Design for OS in the subgroup.") %>% kable_styling()
+tab %>%
+  gt() %>%
+  tab_header(title = "Design for OS in the Subgroup") %>%
+  cols_align(align = "left", columns = Value) %>%
+  tab_footnote(
+    footnote = "Cumulative boundary crossing probability includes crossing probability at earlier analysis.",
+    locations = cells_body(columns = "Value", rows = c(9, 10, 14, 15))
+  ) %>%
+  tab_footnote(
+    footnote = "Approximate hazard ratio at bound.",
+    locations = cells_body(columns = "Value", rows = c(3, 8, 13))
+  )
+```
+
+#### H2: OS, All
+
+The total sample size is assumed to be twice the above, N=756.
+The power and hazard ratio can be adjusted to appropriately size the trial rather than starting with adjusting sample size to reach a targeted power.
+For this example, we consider altering power (`beta`) while fixing the hazard ratio at 0.75, representing an increase in median OS from 12 months in the control group to 16 months in the experimental group.
+For this design, we consider a non-binding futility bound where the trial may be stopped early in the overall population if the bound is crossed.
+We use a @HwangShihDeCani bound with $\gamma = -3.25$.
+Study designers should carefully consider implication for parameter choices, particularly if the futility bounds provide sensible guidance for stopping the trial.
+Since the futility bounds are non-binding, the efficacy bound is computed assuming the futility bound is ignored which will control Type I error at the targeted level even if a futility bound is crossed and the trial is continued.
+
+```{r, results = 'asis'}
+hr <- .75
+beta <- .14
+os <- gsDesign::gsSurv(
+  k = 3, test.type = 4, alpha = 0.01, beta = beta, hr = hr,
+  timing = c(0.62, 0.83), sfu = sfLDOF,
+  sfl = sfHSD, sflpar = -3.25,
+  lambdaC = log(2) / 12, eta = 0.001, S = NULL,
+  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
+  T = 42, minfup = 24
+)
+tab <- gsDesign::gsBoundSummary(os)
+rownames(tab) <- 1:nrow(tab)
+cat(summary(os))
+```
+
+```{r}
+tab %>%
+  kable(caption = "Design for OS in all subjects") %>%
+  kable_styling()
+```
+
+We can also plot different design characteristics. Here, we plot the approximate hazard ratio to cross each bound which may be helpful for design team discussions.
+
+```{r}
+plot(os, plottype = "HR", xlab = "Events")
+```
+
+#### H3: PFS, Subgroup
+
+For progression free survival (PFS) we assume a shorter median time to event of 5 months.
+With an assumed hazard ratio of 0.65, we adjust `beta` and `timing` to match the targeted sample size and interim analysis timing.
+We assume a larger dropout rate for PFS than we did for OS.
+Here we set up a futility bound for safety.
+This is an asymmetric 2-sided design with both futility and efficacy boundary crossing probabilities under the null hypothesis. The parameter `astar = 0.1` specifies total lower bound spending of 10%.
+The lower @HwangShihDeCani spending bound with $\gamma = -8$ is intended to be conservative in terms of futility at the interim, but still provide a safety bound for the PFS result in this targeted population.
+This would have to be carefully evaluated by the study design team at the time of design.
+
+```{r, results='asis'}
+hr <- .65
+beta <- .149
+pfssub <- gsDesign::gsSurv(
+  k = 2, test.type = 6, astar = 0.1, alpha = 0.004, beta = beta, hr = hr,
+  timing = .87, sfu = sfLDOF,
+  sfl = sfHSD, sflpar = -8,
+  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
+  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
+  T = 32, minfup = 14
+)
+tab <- gsDesign::gsBoundSummary(pfssub)
+rownames(tab) <- 1:nrow(tab)
+cat(summary(pfssub))
+```
+
+```{r}
+tab %>%
+  kable(caption = "Design for PFS in the subgroup") %>%
+  kable_styling()
+```
+
+#### H4: PFS, All
+
+Finally, we design for PFS in all subjects.
+In this case, we simplify to a one-sided design.
+A futility bound could be considered, if appropriate.
+
+```{r}
+hr <- .74
+beta <- .15
+pfs <- gsDesign::gsSurv(
+  k = 2, test.type = 1, alpha = 0.004, beta = beta, hr = hr,
+  timing = .86, sfu = sfLDOF,
+  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
+  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
+  T = 32, minfup = 14
+)
+tab <- gsDesign::gsBoundSummary(pfs)
+rownames(tab) <- 1:nrow(tab)
+tab %>%
+  kable(caption = "Design for PFS in the overall population") %>%
+  kable_styling()
+```
+
+#### H5 and H6: ORR
+
+For objective response rate (ORR), we assume an underlying control rate of 15%.
+In the subgroup population, we have almost 90% power to detect a 20% improvement.
+
+```{r}
+nBinomial(p1 = .35, p2 = .15, alpha = .0005, n = 378)
+```
+
+In the all subjects population, we have approximately 95% power to detect an improvement in ORR from 15% to 30%.
+
+```{r}
+nBinomial(p1 = .3, p2 = .15, alpha = .0005, n = 756)
+```
+
+### Design list
+
+Now we associate designs with hypotheses in an ordered list corresponding to the order in the multiplicity graph setup.
+Since ORR designs are not group sequential, we enter `NULL` values for those in the last 2 entries of the design list; hit code button to reveal code for this.
+
+```{r}
+### THIS NEEDS TO BE MODIFIED TO MATCH STUDY
+gsDlist <- list(ossub, os, pfssub, pfs, NULL, NULL)
+```
+
+### Spending plan and spending time
+
+While it was relatively straightforward above to set up timing of analyses to match for the different hypotheses, accumulation of endpoints can vary from plan in a variety of ways.
+Planning on how to deal with this is critical at the time of protocol development to avoid later amendments or inappropriate $\alpha$-allocation to early analyses.
+Before going into examples, we review the concept of $\alpha$-spending and what we will refer to as _spending time_.
+
+For a given hypothesis, we will assign a non-decreasing spending function $f(t)$ defined for $t\ge 0$ with $f(0)=0$ and $f(t)=\alpha$ for $t\ge 1$.
+We will assume $K$ analyses with observed event counts $n_k$ at analysis $k=1,2,\ldots,K$ and a targeted final event count of $N_k$.
+The $\alpha$-spending at analysis $k$ was originally defined [@LanDeMets] as $f(t_k=n_k/N_K)$.
+The values $n_k/N_K$ will be referred to as the _information fraction_, $k=1,\ldots,K$.
+This is used to pre-specify the cumulative amount of Type I error for a hypothesis at each analysis.
+In @LanDeMets1989 they noted that calendar time was another option for $t_k$ values, $k=1,\ldots,K.$
+@PLWBook noted further that as long as $t_k$ is increasing with $k$, it can be used to define spending; this is subject to the requirement that under the null hypothesis, the timing must be selected in a way that is not correlated with the test statistic (e.g., blinded).
+We will refer to $t_k$, regardless of its definition, as the _spending time_ for a hypothesis.
+Note that the joint distribution of interim and final tests for a hypothesis is driven by $n_k$, $k=1,\ldots,K$.
+This is equivalent to basing correlation on the information fraction $n_k^{(actual)}/n_K^{(planned)}$, $1\le k\le K$.
+Thus, both spending time and information fraction are required to compute bounds for group sequential testing.
+Our general objectives here will be to:
+
+- Spend all Type I error for each hypothesis in its combined interim and final analyses; this requires the spending time to be 1 for the final analysis of a hypothesis.
+- Ensure spending time is well defined for each analysis of each hypothesis.
+- We will assume that both follow-up duration and event counts may be of interest in determining timing of analyses; e.g., for immuno-oncology therapies there have been delayed treatment effects and the tail of the time-to-event distribution has been important to establish benefit. Thus, we will assume here that over-spending at interim analysis is to be avoided.
+
+Here we assume that the subgroup prevalence was over-estimated in the study design and indicating how spending time can be used to deal with this deviation from plan.
+
+## Results entry at time of analysis
+
+Results for each analysis performed should be entered here.
+We begin by documenting timing and event counts of each analysis.
+Then we proceed to enter nominal 1-sided testing p-values for each analysis of each hypothesis.
+
+### Timing of analyses and resulting event counts and spending times
+
+Recall that the design assumed 50% prevalence of the subgroup.
+Here we assume that the observed prevalence is 40% and that, by specification stated above, we enroll until the targeted subpopulation of 378 is achieved.
+This is assumed to occur after 22 months with a total enrollment of 940.
+Timing of analyses is now targeted as follows:
+
+- The first interim is scheduled 28 months, 6 months after final enrollment.
+- The second interim is scheduled at the later of 14 months after final enrollment (22 + 14 = 36 months after start of enrollment) or the targeted final PFS event count of 297 events. We assume the event count is reached at 34 months and that the achieved final event count is 320 in the subgroup at 36 months.
+- The final analysis is scheduled at 24 months after final enrollment (month 22 + 24 = 46) or when 284 events have been observed in the subgroup, whichever comes first; there is also the qualification that the final analysis will be no more than 30 months after final enrollment (6 months after targeted time).
+We assume the targeted event count is not reached by 6 months after the targeted final analysis time and, thus, the final analysis cutoff is set at month 22 + 30 = 52 and that at that time 270 OS events have been observed in the subgroup.
+
+All of the above leads to event counts and spending for PFS and OS as follows:
+
+```{r}
+### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
+# PFS, overall population
+pfs$n.I <- c(675, 750)
+# PFS, subgroup
+pfssub$n.I <- c(265, 310)
+# OS, overall population
+os$n.I <- c(529, 700, 800)
+# OS, subgroup
+ossub$n.I <- c(185, 245, 295)
+```
+
+### Nominal p-values for each analysis
+
+For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99).
+No other entry is required by the user in any other section of the document.
+Calendar timing is also associated with PFS hypotheses for use in spending functions.
+Spending time for OS spending will be input as NULL so that spending will be based on event counts for OS hypotheses.
+
+```{r,warnings=FALSE,message=FALSE}
+### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
+inputResults <- tibble(
+  H = c(rep(1, 3), rep(2, 3), rep(3, 2), rep(4, 2), 5, 6),
+  Pop = c(
+    rep("Subgroup", 3), rep("All", 3),
+    rep("Subgroup", 2), rep("All", 2),
+    "Subgroup", "All"
+  ),
+  Endpoint = c(rep("OS", 6), rep("PFS", 4), rep("ORR", 2)),
+  # Example with some rejections
+  nominalP = c(
+    .03, .0001, .000001,
+    .2, .15, .1,
+    .2, .001,
+    .3, .2,
+    .00001,
+    .1
+  ),
+  # Example with no rejections
+  # nominalP = rep(.03, 12),
+  Analysis = c(1:3, 1:3, 1:2, 1:2, 1, 1),
+  events = c(ossub$n.I, os$n.I, pfssub$n.I, pfs$n.I, NA, NA),
+  spendingTime = c(
+    ossub$n.I / max(ossub$n.I),
+    ossub$n.I / max(ossub$n.I),
+    pfssub$n.I / max(pfssub$n.I),
+    pfssub$n.I / max(pfssub$n.I),
+    NA, NA
+  )
+)
+kable(inputResults, caption = "DUMMY RESULTS FOR IA2.") %>%
+  kable_styling() %>%
+  add_footnote("Dummy results", notation = "none")
+```
+
+## Testing hypotheses (iterative approach)
+
+In this vignette we test OS and PFS hypotheses separately using `wpgsd` under the *current* Type I error allocation given by the overall graphical procedure. Whenever one or more hypotheses are rejected, we update the overall graph using `graphicalMCP` and repeat. This continues until no additional hypotheses can be rejected.
+
+### Endpoint-specific setup for wpgsd
+
+We treat OS (H1/H2) and PFS (H3/H4) as two separate 2-hypothesis graphical procedures, each with subgroup nested in overall population.
+
+```{r,message=FALSE,warning=FALSE}
+# Helper: correlation matrix for 2 nested populations (subgroup nested in overall)
+make_corr_nested_2hyp <- function(n_sub, n_all) {
+  stopifnot(length(n_sub) == length(n_all))
+  n_sub <- as.numeric(n_sub)
+  n_all <- as.numeric(n_all)
+  k <- length(n_sub)
+
+  # Test ordering matches wpgsd examples: H1_A1, H2_A1, H1_A2, H2_A2, ...
+  n_vec <- as.vector(rbind(n_sub, n_all))
+  overlap <- matrix(0, nrow = 2 * k, ncol = 2 * k)
+
+  for (a in seq_len(k)) {
+    for (b in seq_len(k)) {
+      amin <- min(a, b)
+      # Indices in the (H1,H2) x analyses ordering
+      ia1 <- 2 * (a - 1) + 1
+      ia2 <- 2 * (a - 1) + 2
+      ib1 <- 2 * (b - 1) + 1
+      ib2 <- 2 * (b - 1) + 2
+
+      # subgroup-subgroup
+      overlap[ia1, ib1] <- n_sub[amin]
+      # overall-overall
+      overlap[ia2, ib2] <- n_all[amin]
+      # subgroup-overall (and overall-subgroup)
+      overlap[ia1, ib2] <- n_sub[amin]
+      overlap[ia2, ib1] <- n_sub[amin]
+    }
+  }
+
+  corr <- overlap / sqrt(outer(n_vec, n_vec))
+  # Ensure numerical symmetry
+  corr <- (corr + t(corr)) / 2
+  corr
+}
+
+# Helper: run wpgsd for a 2-hypothesis graph with H1 -> H2 recycling
+run_wpgsd_2hyp <- function(alpha_total, w_local, p_obs, corr, info_frac) {
+  if (is.na(alpha_total) || alpha_total <= 0) {
+    return(list(bounds = NULL, closed_test = NULL, rejected = c(FALSE, FALSE)))
+  }
+
+  w_local <- as.numeric(w_local)
+  if (length(w_local) != 2) stop("w_local must have length 2")
+  if (any(w_local <= 0)) stop("w_local must be strictly positive for wpgsd")
+  w_local <- w_local / sum(w_local)
+
+  m_local <- matrix(c(
+    0, 1,
+    0, 0
+  ), nrow = 2, byrow = TRUE)
+
+  # Overall spending time (type = 2) uses the minimum information fraction
+  # across hypotheses at each analysis
+  t_overall <- pmin(info_frac[[1]], info_frac[[2]])
+
+  bounds <- wpgsd::generate_bounds(
+    type = 2,
+    k = nrow(p_obs),
+    w = w_local,
+    m = m_local,
+    corr = corr,
+    alpha = alpha_total,
+    sf = gsDesign::sfLDOF,
+    sfparm = 0,
+    t = t_overall
+  )
+
+  ct <- wpgsd::closed_test(bounds, p_obs)
+  ct <- as.data.frame(ct)
+
+  rejected <- c(
+    any(as.character(ct$H1) == "Success"),
+    any(as.character(ct$H2) == "Success")
+  )
+
+  list(bounds = bounds, closed_test = ct, rejected = rejected)
+}
+
+# Helper: run endpoint family under current alpha allocation.
+# If one hypothesis has alpha = 0, fall back to single-hypothesis group sequential testing.
+run_family_nested_2hyp <- function(alpha_vec, p_obs, corr, info_frac) {
+  alpha_vec <- as.numeric(alpha_vec)
+  if (length(alpha_vec) != 2) stop("alpha_vec must have length 2")
+
+  if (any(alpha_vec < 0)) stop("alpha_vec must be nonnegative")
+  if (sum(alpha_vec) <= 0) {
+    return(list(bounds = NULL, closed_test = NULL, rejected = c(FALSE, FALSE)))
+  }
+
+  active <- alpha_vec > 0
+
+  if (sum(active) == 2) {
+    return(run_wpgsd_2hyp(
+      alpha_total = sum(alpha_vec),
+      w_local = alpha_vec,
+      p_obs = p_obs,
+      corr = corr,
+      info_frac = info_frac
+    ))
+  }
+
+  # Single-hypothesis fallback
+  i <- which(active)[1]
+  k <- nrow(p_obs)
+  timing <- if (k > 1) info_frac[[i]][1:(k - 1)] else numeric(0)
+  gd <- gsDesign::gsDesign(
+    k = k,
+    test.type = 1,
+    alpha = alpha_vec[i],
+    sfu = gsDesign::sfLDOF,
+    timing = timing
+  )
+  p_bound <- 1 - stats::pnorm(gd$upper$bound)
+  p_col <- if (i == 1) p_obs$H1 else p_obs$H2
+
+  ct <- data.frame(
+    H1 = rep(NA_character_, k),
+    H2 = rep(NA_character_, k),
+    Analysis = paste("Analysis", p_obs$Analysis),
+    stringsAsFactors = FALSE
+  )
+  ct[[if (i == 1) "H1" else "H2"]] <- ifelse(p_col <= p_bound, "Success", "Fail")
+
+  rejected <- c(FALSE, FALSE)
+  rejected[i] <- any(p_col <= p_bound)
+
+  list(bounds = NULL, closed_test = ct, rejected = rejected)
+}
+
+# OS inputs (H1/H2)
+n_os_sub <- ossub$n.I
+n_os_all <- os$n.I
+p_obs_os <- tibble::tibble(
+  Analysis = 1:3,
+  H1 = dplyr::filter(inputResults, H == 1) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP),
+  H2 = dplyr::filter(inputResults, H == 2) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP)
+)
+corr_os <- make_corr_nested_2hyp(n_os_sub, n_os_all)
+info_os <- list(n_os_sub / max(n_os_sub), n_os_all / max(n_os_all))
+
+# PFS inputs (H3/H4) encoded as local (H1/H2) for wpgsd
+n_pfs_sub <- pfssub$n.I
+n_pfs_all <- pfs$n.I
+p_obs_pfs <- tibble::tibble(
+  Analysis = 1:2,
+  H1 = dplyr::filter(inputResults, H == 3) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP),
+  H2 = dplyr::filter(inputResults, H == 4) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP)
+)
+corr_pfs <- make_corr_nested_2hyp(n_pfs_sub, n_pfs_all)
+info_pfs <- list(n_pfs_sub / max(n_pfs_sub), n_pfs_all / max(n_pfs_all))
+
+# ORR inputs (H5/H6): fixed tests at the current allocation
+p_orr <- c(
+  dplyr::filter(inputResults, H == 5) %>% dplyr::pull(nominalP),
+  dplyr::filter(inputResults, H == 6) %>% dplyr::pull(nominalP)
+)
+```
+
+### Correlation matrices for test statistics
+
+The WPGSD methods use the correlation structure of test statistics across analyses. Below we show the correlation matrices implied by the event-overlap tables for the OS and PFS families. For convenience, we also show a combined correlation matrix with OS and PFS blocks (and 0 correlation between OS and PFS blocks).
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr <- function(x, title) {
+  xt <- as.data.frame(round(x, 2))
+  xt$Test <- if (!is.null(rownames(xt))) rownames(xt) else as.character(seq_len(nrow(xt)))
+  xt <- xt %>% dplyr::select(Test, dplyr::everything())
+  gt::gt(xt) %>%
+    gt::tab_header(title = title) %>%
+    gt::tab_options(
+      table.width = gt::pct(100),
+      table.font.size = gt::px(10),
+      data_row.padding = gt::px(2),
+      heading.title.font.size = gt::px(12)
+    )
+}
+
+# Make consistent test-statistic names when wpgsd does not set dimnames
+make_names_2hyp <- function(h1, h2, k) {
+  as.vector(rbind(paste0(h1, "_A", seq_len(k)), paste0(h2, "_A", seq_len(k))))
+}
+
+k_os <- length(n_os_sub)
+k_pfs <- length(n_pfs_sub)
+
+nm_os <- make_names_2hyp("H1", "H2", k_os)
+nm_pfs <- make_names_2hyp("H3", "H4", k_pfs)
+
+# Use named copies for display (do not modify the matrices used for computation)
+corr_os_disp <- corr_os
+rownames(corr_os_disp) <- nm_os
+colnames(corr_os_disp) <- nm_os
+
+corr_pfs_disp <- corr_pfs
+rownames(corr_pfs_disp) <- nm_pfs
+colnames(corr_pfs_disp) <- nm_pfs
+
+print(fmt_corr(corr_os_disp, "OS family: correlation matrix for Z statistics (H1/H2 across analyses)"))
+print(fmt_corr(corr_pfs_disp, "PFS family: correlation matrix for Z statistics (H3/H4 across analyses; encoded as local H1/H2)"))
+
+# Combined block-diagonal correlation matrix (OS + PFS)
+corr_all <- matrix(
+  0,
+  nrow = nrow(corr_os_disp) + nrow(corr_pfs_disp),
+  ncol = ncol(corr_os_disp) + ncol(corr_pfs_disp)
+)
+corr_all[seq_len(nrow(corr_os_disp)), seq_len(ncol(corr_os_disp))] <- corr_os_disp
+idx_pfs <- (nrow(corr_os_disp) + 1):(nrow(corr_os_disp) + nrow(corr_pfs_disp))
+jdx_pfs <- (ncol(corr_os_disp) + 1):(ncol(corr_os_disp) + ncol(corr_pfs_disp))
+corr_all[idx_pfs, jdx_pfs] <- corr_pfs_disp
+
+rn_all <- c(paste0("OS_", nm_os), paste0("PFS_", nm_pfs))
+colnames(corr_all) <- rn_all
+rownames(corr_all) <- rn_all
+
+fmt_corr(corr_all, "Combined correlation matrix (block-diagonal OS + PFS)")
+```
+
+### Iterative testing and graph updates
+
+```{r,message=FALSE,warning=FALSE}
+max_iter <- 20
+
+g_cur <- g0
+graphs_iter <- list(g_cur)
+
+rejected_global <- rep(FALSE, nHypotheses)
+iter_log <- NULL
+
+for (iter in 1:max_iter) {
+  alpha_cur <- fwer * as.numeric(g_cur$hypotheses)
+
+  # OS: alpha allocated to H1/H2 in the current overall graph
+  os_res <- run_family_nested_2hyp(alpha_cur[1:2], p_obs = p_obs_os, corr = corr_os, info_frac = info_os)
+  rej_os <- os_res$rejected
+
+  # PFS: alpha allocated to H3/H4 in the current overall graph
+  pfs_res <- run_family_nested_2hyp(alpha_cur[3:4], p_obs = p_obs_pfs, corr = corr_pfs, info_frac = info_pfs)
+  rej_pfs <- pfs_res$rejected
+
+  # ORR: fixed tests under current allocation
+  rej_orr <- (p_orr <= alpha_cur[5:6]) & (alpha_cur[5:6] > 0)
+
+  newly_rejected <- which(c(rej_os, rej_pfs, rej_orr) & !rejected_global)
+
+  iter_log <- dplyr::bind_rows(
+    iter_log,
+    tibble::tibble(
+      iteration = iter,
+      alpha_H1 = alpha_cur[1],
+      alpha_H2 = alpha_cur[2],
+      alpha_H3 = alpha_cur[3],
+      alpha_H4 = alpha_cur[4],
+      alpha_H5 = alpha_cur[5],
+      alpha_H6 = alpha_cur[6],
+      newly_rejected = if (length(newly_rejected) == 0) "" else paste(newly_rejected, collapse = ",")
+    )
+  )
+
+  if (length(newly_rejected) == 0) break
+
+  rejected_global[newly_rejected] <- TRUE
+  gu <- graphicalMCP::graph_update(g_cur, delete = newly_rejected)
+  g_cur <- gu$updated_graph
+  graphs_iter[[length(graphs_iter) + 1]] <- g_cur
+}
+
+iter_log %>%
+  dplyr::mutate(
+    across(starts_with("alpha_"), ~ round(.x, 6))
+  ) %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Iteration log: current alpha allocation and new rejections")
+```
+
+### Closed testing results under the final allocation
+
+```{r,message=FALSE,warning=FALSE}
+# Recompute under the final allocation from the last iteration
+alpha_final <- fwer * as.numeric(g_cur$hypotheses)
+
+os_final <- run_family_nested_2hyp(alpha_final[1:2], p_obs = p_obs_os, corr = corr_os, info_frac = info_os)
+pfs_final <- run_family_nested_2hyp(alpha_final[3:4], p_obs = p_obs_pfs, corr = corr_pfs, info_frac = info_pfs)
+
+if (!is.null(os_final$closed_test)) {
+  os_final$closed_test %>%
+    gt::gt() %>%
+    gt::tab_header(title = "OS (H1/H2): closed testing results (wpgsd)")
+}
+
+if (!is.null(pfs_final$closed_test)) {
+  pfs_final$closed_test %>%
+    gt::gt() %>%
+    gt::tab_header(title = "PFS (H3/H4): closed testing results (wpgsd; encoded as local H1/H2)")
+}
+```
+
+### Fully adjusted p-values for each hypothesis
+
+Here we compute fully adjusted p-values as the smallest familywise error rate (overall \(\alpha\)) at which a hypothesis would be rejected under the full iterative procedure described above. This can be computed regardless of whether a hypothesis is rejected under the current allocation.
+
+```{r,message=FALSE,warning=FALSE}
+iterate_rejections <- function(fwer_val) {
+  g_cur0 <- g0
+  rejected <- rep(FALSE, nHypotheses)
+
+  for (iter in 1:20) {
+    alpha_cur <- fwer_val * as.numeric(g_cur0$hypotheses)
+
+    os_res <- run_family_nested_2hyp(alpha_cur[1:2], p_obs = p_obs_os, corr = corr_os, info_frac = info_os)
+    pfs_res <- run_family_nested_2hyp(alpha_cur[3:4], p_obs = p_obs_pfs, corr = corr_pfs, info_frac = info_pfs)
+    rej_orr <- (p_orr <= alpha_cur[5:6]) & (alpha_cur[5:6] > 0)
+
+    newly <- which(c(os_res$rejected, pfs_res$rejected, rej_orr) & !rejected)
+    if (length(newly) == 0) break
+
+    rejected[newly] <- TRUE
+    g_cur0 <- graphicalMCP::graph_update(g_cur0, delete = newly)$updated_graph
+  }
+
+  rejected
+}
+
+# Cache to avoid re-running the full procedure repeatedly
+rej_cache <- new.env(parent = emptyenv())
+get_rej <- function(fwer_val) {
+  key <- sprintf("%.12f", fwer_val)
+  if (exists(key, envir = rej_cache, inherits = FALSE)) {
+    return(get(key, envir = rej_cache, inherits = FALSE))
+  }
+  val <- tryCatch(
+    iterate_rejections(fwer_val),
+    error = function(e) rep(FALSE, nHypotheses)
+  )
+  assign(key, val, envir = rej_cache)
+  val
+}
+
+# Binary search for the minimal overall alpha leading to rejection
+find_adj_p <- function(h, tol_iter = 15) {
+  # Search upward from the current fwer, avoiding extreme alpha values
+  hi <- fwer
+  if (hi <= 0) hi <- 0.001
+  while (hi < 0.5 && !get_rej(hi)[h]) hi <- hi * 2
+  if (!get_rej(hi)[h]) return(NA_real_)
+  lo <- 0
+  for (i in seq_len(tol_iter)) {
+    mid <- (lo + hi) / 2
+    if (get_rej(mid)[h]) {
+      hi <- mid
+    } else {
+      lo <- mid
+    }
+  }
+  hi
+}
+
+adj_table <- tibble::tibble(
+  Hypothesis = nameHypotheses,
+  adjusted_p = vapply(seq_len(nHypotheses), find_adj_p, numeric(1)),
+  rejected_at_fwer = rejected_global
+)
+
+# Add nominal p-value + analysis (using first success if rejected, else last analysis)
+analysis_os_h1 <- if (!is.null(os_final$closed_test) && any(os_final$closed_test$H1 == "Success", na.rm = TRUE)) {
+  min(which(os_final$closed_test$H1 == "Success"))
+} else {
+  nrow(p_obs_os)
+}
+analysis_os_h2 <- if (!is.null(os_final$closed_test) && any(os_final$closed_test$H2 == "Success", na.rm = TRUE)) {
+  min(which(os_final$closed_test$H2 == "Success"))
+} else {
+  nrow(p_obs_os)
+}
+analysis_pfs_h3 <- if (!is.null(pfs_final$closed_test) && any(pfs_final$closed_test$H1 == "Success", na.rm = TRUE)) {
+  min(which(pfs_final$closed_test$H1 == "Success"))
+} else {
+  nrow(p_obs_pfs)
+}
+analysis_pfs_h4 <- if (!is.null(pfs_final$closed_test) && any(pfs_final$closed_test$H2 == "Success", na.rm = TRUE)) {
+  min(which(pfs_final$closed_test$H2 == "Success"))
+} else {
+  nrow(p_obs_pfs)
+}
+
+nom_p <- c(
+  p_obs_os$H1[analysis_os_h1],
+  p_obs_os$H2[analysis_os_h2],
+  p_obs_pfs$H1[analysis_pfs_h3],
+  p_obs_pfs$H2[analysis_pfs_h4],
+  p_orr[1],
+  p_orr[2]
+)
+
+analysis_used <- c(
+  analysis_os_h1,
+  analysis_os_h2,
+  analysis_pfs_h3,
+  analysis_pfs_h4,
+  1,
+  1
+)
+
+# Sequential p-values as minimal within-family alpha needed for rejection
+# at the specified analysis, holding within-family weights fixed.
+seq_p_family_2hyp <- function(h_local, analysis, w_local, p_obs_full, corr_full, info_frac_full) {
+  w_local <- as.numeric(w_local)
+  w_local <- pmax(w_local, 1e-12)
+  w_local <- w_local / sum(w_local)
+
+  # Restrict to the analyses up to `analysis`
+  p_obs <- p_obs_full %>% dplyr::filter(analysis <= !!analysis)
+  corr <- corr_full[seq_len(2 * analysis), seq_len(2 * analysis), drop = FALSE]
+  info_frac <- list(
+    info_frac_full[[1]][seq_len(analysis)],
+    info_frac_full[[2]][seq_len(analysis)]
+  )
+
+  rejects_at <- function(alpha_total) {
+    res <- tryCatch(
+      run_wpgsd_2hyp(
+        alpha_total = alpha_total,
+        w_local = w_local,
+        p_obs = p_obs,
+        corr = corr,
+        info_frac = info_frac
+      ),
+      error = function(e) NULL
+    )
+    if (is.null(res)) return(FALSE)
+    isTRUE(res$rejected[h_local])
+  }
+
+  # If we can't reject even with alpha = 1, report 1
+  if (!rejects_at(1)) return(1)
+
+  lo <- 0
+  hi <- 1
+  for (i in 1:20) {
+    mid <- (lo + hi) / 2
+    if (rejects_at(mid)) {
+      hi <- mid
+    } else {
+      lo <- mid
+    }
+  }
+  hi
+}
+
+w_os_local <- alpha_final[1:2]
+w_os_local <- if (sum(w_os_local) > 0) w_os_local / sum(w_os_local) else c(0.5, 0.5)
+p_obs_os_w <- p_obs_os %>% dplyr::transmute(analysis = Analysis, H1 = H1, H2 = H2)
+
+w_pfs_local <- alpha_final[3:4]
+w_pfs_local <- if (sum(w_pfs_local) > 0) w_pfs_local / sum(w_pfs_local) else c(0.5, 0.5)
+p_obs_pfs_w <- p_obs_pfs %>% dplyr::transmute(analysis = Analysis, H1 = H1, H2 = H2)
+
+seq_p <- c(
+  seq_p_family_2hyp(1, analysis_os_h1, w_os_local, p_obs_os_w, corr_os, info_os),
+  seq_p_family_2hyp(2, analysis_os_h2, w_os_local, p_obs_os_w, corr_os, info_os),
+  seq_p_family_2hyp(1, analysis_pfs_h3, w_pfs_local, p_obs_pfs_w, corr_pfs, info_pfs),
+  seq_p_family_2hyp(2, analysis_pfs_h4, w_pfs_local, p_obs_pfs_w, corr_pfs, info_pfs),
+  p_orr[1],
+  p_orr[2]
+)
+
+adj_table2 <- adj_table %>%
+  dplyr::mutate(
+    Analysis = analysis_used,
+    nominal_p = nom_p,
+    sequential_p = seq_p
+  )
+
+adj_table2 %>%
+  gt::gt() %>%
+  gt::fmt_number(columns = c("nominal_p", "sequential_p", "adjusted_p"), decimals = 6) %>%
+  gt::tab_header(title = "Fully adjusted p-values (minimum familywise error rate for rejection)")
+```
+
+### Overall multiplicity graph by iteration {.tabset}
+
+```{r,message=FALSE,warning=FALSE,results='asis', fig.asp=0.9}
+for (i in seq_along(graphs_iter)) {
+  cat("####", paste("Iteration", i - 1, "\n\n"))
+  plot(graphs_iter[[i]],
+    layout = layout6,
+    vertex.size = 45,
+    vertex.label.cex = 0.9
+  )
+  cat("\n\n")
+}
+```
+
+```{r}
+# Restore default options
+options(old)
+```
+
+## Session information
+
+You can use `sessionInfo()` to document the versions of R and R packages used to render this document.
+Note, in particular, that version 3.1 or later of the gsDesign package is needed.
+
+## References
+
+```{r, echo=FALSE, results='asis'}
+cat("<script>\n")
+cat("// Fix dynamic tabsets code block rendering issue under pkgdown\n")
+cat("(function () {\n")
+cat("  // Fix the tweaked element class\n")
+cat("  unstyledCode = document.querySelectorAll(\"button code\");\n\n")
+cat("  // Quit if there are no elements matched (when not rendered by pkgdown)\n")
+cat("  if (!unstyledCode.length) {\n")
+cat("    return;\n")
+cat("  }\n\n")
+cat("  for (let i = 0; i < unstyledCode.length; i++) {\n")
+cat("    blockOld = unstyledCode[i].outerHTML;\n")
+cat("    blockNew =\n")
+cat("      \"<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>\" +\n")
+cat("      blockOld +\n")
+cat("      \"</pre>\";\n")
+cat("    unstyledCode[i].outerHTML = blockNew;\n")
+cat("  }\n\n")
+cat("  // Activate the first real tab\n")
+cat("  var tabElements = [\n")
+cat("    \"ul#group-sequential-designs-for-each-hypothesis li:nth-child(2) button\",\n")
+cat("    \"ul#overall-multiplicity-graph-by-iteration li:nth-child(2) button\",\n")
+cat("  ];\n\n")
+cat("  for (let i = 0; i < tabElements.length; i++) {\n")
+cat("    var el = document.querySelector(tabElements[i]);\n")
+cat("    var tab = new bootstrap.Tab(el);\n")
+cat("    tab.show();\n")
+cat("  }\n")
+cat("})();\n")
+cat("</script>\n")
+```
