@@ -41,11 +41,9 @@
 #' @param boxtextsize transition text size
 #' @param legend.textsize legend text size
 #' @param arrowsize size of arrowhead for transition arrows
-#' @param curvedflag if `TRUE`, draw transition arrows as curves using `geom_curve()`;
-#' if `FALSE`, draw as straight lines using `geom_segment()`
-#' @param curvature a numeric value controlling the curvature of transition arrows
-#' when `curvedflag = TRUE`; negative values curve left, positive values curve right,
-#' and zero produces a straight line
+#' @param curvature a numeric value controlling the curvature of transition arrows;
+#' negative values curve left, positive values curve right,
+#' and zero produces a straight line (using `geom_segment()`)
 #' @param radianStart radians from origin for first ellipse; nodes spaced equally in clockwise order with centers on an ellipse by default
 #' @param offset rotational offset in radians for transition weight arrows
 #' @param xradius horizontal ellipse diameter on which ellipses are drawn
@@ -133,7 +131,6 @@
 #'   boxtextsize = 4,
 #'   legend.textsize = size * 2.5,
 #'   arrowsize = 0.02,
-#'   curvedflag = TRUE,
 #'   curvature = 0.5,
 #'   radianStart = if ((nHypotheses)\%\%2 != 0) {
 #'      pi * (1/2 + 1/nHypotheses)
@@ -170,7 +167,6 @@ hGraph <- function(
   boxtextsize = 4,
   legend.textsize = size*2.5,
   arrowsize = 0.02,
-  curvedflag = TRUE,
   curvature = 0.5,
   radianStart = if((nHypotheses)%%2 != 0) {
     pi * (1/2 + 1/nHypotheses) } else {
@@ -307,6 +303,17 @@ hGraph <- function(
   # Set up transition data
   transitionSegments <- makeTransitionSegments(df = hData, m = m, xradius = halfWid, yradius = halfHgt, offset = offset,
                            trprop = trprop, trdigits = trdigits, trhw = trhw, trhh = trhh)
+  # Set up arrow layer (curvature = 0 means straight segments)
+  arrowLayer <- if (curvature == 0) {
+    geom_segment(data = transitionSegments,
+                 aes(x=x, y=y, xend=xend, yend=yend),
+                 arrow = grid::arrow(length = grid::unit(arrowsize, "npc")))
+  } else {
+    geom_curve(data = transitionSegments,
+               aes(x=x, y=y, xend=xend, yend=yend),
+               arrow = grid::arrow(length = grid::unit(arrowsize, "npc")),
+               curvature = curvature)
+  }
   # Layer the plot
   ggplot()+
     # plot ellipses
@@ -325,16 +332,7 @@ hGraph <- function(
     # Add text
     geom_text(data=hData,aes(x=x,y=y,label=txt),size=size) +
     # Add transition arrows
-    if (curvedflag) {
-      geom_curve(data = transitionSegments,
-                 aes(x=x, y=y, xend=xend, yend=yend),
-                 arrow = grid::arrow(length = grid::unit(arrowsize, "npc")),
-                 curvature = curvature)
-    } else {
-      geom_segment(data = transitionSegments,
-                   aes(x=x, y=y, xend=xend, yend=yend),
-                   arrow = grid::arrow(length = grid::unit(arrowsize, "npc")))
-    } +
+    arrowLayer +
     # Add transition boxes
     geom_rect(data = transitionSegments,
               aes(xmin = xbmin, xmax = xbmax, ymin = ybmin, ymax = ybmax),

@@ -26,7 +26,6 @@ hGraph(
   boxtextsize = 4,
   legend.textsize = size * 2.5,
   arrowsize = 0.02,
-  curvedflag = TRUE,
   curvature = 0.5,
   radianStart = if ((nHypotheses)\%\%2 != 0) {
      pi * (1/2 + 1/nHypotheses)
@@ -83,12 +82,9 @@ hGraph(
 
 \item{arrowsize}{size of arrowhead for transition arrows}
 
-\item{curvedflag}{if \code{TRUE}, draw transition arrows as curves using \code{geom_curve()};
-if \code{FALSE}, draw as straight lines using \code{geom_segment()}}
-
-\item{curvature}{a numeric value controlling the curvature of transition arrows
-when \code{curvedflag = TRUE}; negative values curve left, positive values curve right,
-and zero produces a straight line}
+\item{curvature}{a numeric value controlling the curvature of transition arrows;
+negative values curve left, positive values curve right,
+and zero produces a straight line (using \code{geom_segment()})}
 
 \item{radianStart}{radians from origin for first ellipse; nodes spaced equally in clockwise order with centers on an ellipse by default}
 
