@@ -153,6 +153,9 @@ For the example, we assume 1-sided testing or a non-binding futility bound as re
 Each is demonstrated in the example code for respective hypotheses.
 Efficacy $\alpha$-spending for all group sequential designs uses the @LanDeMets spending function approximating an O'Brien-Fleming bound.
 
+Note: `gsDesign::gsSurv()` supports multiple event-driven sample size methods, and its default is not `"Schoenfeld"`.
+To align results with the `rpact`-based vignette, we set `method = "Schoenfeld"` in the designs below.
+
 This section needs to be modified by the user to match the study design under consideration.
 Those uncomfortable with coding may wish to design using the
 [gsDesign Shiny app](https://gsdesign.shinyapps.io/prod/) which provides not only a point and click interface, but also a code tab that generates R code that can be copied and plugged in for designs below.
@@ -179,7 +182,8 @@ ossub <- gsDesign::gsSurv(
   gamma = c(2.5, 5, 7.5, 10), # Relative enrollment rates by time period
   R = c(2, 2, 2, 12), # Duration of time periods for rates in gamma
   T = 42, # Planned study duration for OS
-  minfup = 24 # Planned minimum follow-up after end of enrollment
+  minfup = 24, # Planned minimum follow-up after end of enrollment
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(ossub)
 rownames(tab) <- 1:nrow(tab)
@@ -224,7 +228,8 @@ os <- gsDesign::gsSurv(
   sfl = sfHSD, sflpar = -3.25,
   lambdaC = log(2) / 12, eta = 0.001, S = NULL,
   gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 42, minfup = 24
+  T = 42, minfup = 24,
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(os)
 rownames(tab) <- 1:nrow(tab)
@@ -262,7 +267,8 @@ pfssub <- gsDesign::gsSurv(
   sfl = sfHSD, sflpar = -8,
   lambdaC = log(2) / 5, eta = 0.02, S = NULL,
   gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14
+  T = 32, minfup = 14,
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfssub)
 rownames(tab) <- 1:nrow(tab)
@@ -289,7 +295,8 @@ pfs <- gsDesign::gsSurv(
   timing = .86, sfu = sfLDOF,
   lambdaC = log(2) / 5, eta = 0.02, S = NULL,
   gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14
+  T = 32, minfup = 14,
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfs)
 rownames(tab) <- 1:nrow(tab)

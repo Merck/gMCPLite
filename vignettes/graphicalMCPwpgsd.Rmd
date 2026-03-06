@@ -162,6 +162,7 @@ layout6 <- rbind(
 plot(g0,
   layout = layout6,
   vertex.size = 45,
+  vertex.color = cbPalette[c(2, 2, 4, 4, 3, 3)],
   vertex.label.cex = 0.9
 )
 ```
@@ -176,6 +177,9 @@ Given the stringent Type I error control for multiple hypotheses, the ability to
 For the example, we assume 1-sided testing or a non-binding futility bound as required for a @MaurerBretz2013 design using group sequential design with graphical multiplicity control.
 Each is demonstrated in the example code for respective hypotheses.
 Efficacy $\alpha$-spending for all group sequential designs uses the @LanDeMets spending function approximating an O'Brien-Fleming bound.
+
+Note: `gsDesign::gsSurv()` supports multiple event-driven sample size methods, and its default is not `"Schoenfeld"`.
+To align results with the `rpact`-based vignette, we set `method = "Schoenfeld"` in the designs below.
 
 This section needs to be modified by the user to match the study design under consideration.
 Those uncomfortable with coding may wish to design using the
@@ -203,10 +207,11 @@ ossub <- gsDesign::gsSurv(
   gamma = c(2.5, 5, 7.5, 10), # Relative enrollment rates by time period
   R = c(2, 2, 2, 12), # Duration of time periods for rates in gamma
   T = 42, # Planned study duration for OS
-  minfup = 24 # Planned minimum follow-up after end of enrollment
+  minfup = 24, # Planned minimum follow-up after end of enrollment
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(ossub)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 cat(summary(ossub))
 ```
 
@@ -248,10 +253,11 @@ os <- gsDesign::gsSurv(
   sfl = sfHSD, sflpar = -3.25,
   lambdaC = log(2) / 12, eta = 0.001, S = NULL,
   gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 42, minfup = 24
+  T = 42, minfup = 24,
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(os)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 cat(summary(os))
 ```
 
@@ -286,10 +292,11 @@ pfssub <- gsDesign::gsSurv(
   sfl = sfHSD, sflpar = -8,
   lambdaC = log(2) / 5, eta = 0.02, S = NULL,
   gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14
+  T = 32, minfup = 14,
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfssub)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 cat(summary(pfssub))
 ```
 
@@ -313,10 +320,11 @@ pfs <- gsDesign::gsSurv(
   timing = .86, sfu = sfLDOF,
   lambdaC = log(2) / 5, eta = 0.02, S = NULL,
   gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14
+  T = 32, minfup = 14,
+  method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfs)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 tab %>%
   kable(caption = "Design for PFS in the overall population") %>%
   kable_styling()
@@ -623,7 +631,7 @@ The WPGSD methods use the correlation structure of test statistics across analys
 fmt_corr <- function(x, title) {
   xt <- as.data.frame(round(x, 2))
   xt$Test <- if (!is.null(rownames(xt))) rownames(xt) else as.character(seq_len(nrow(xt)))
-  xt <- xt %>% dplyr::select(Test, dplyr::everything())
+  xt <- xt %>% dplyr::select(.data$Test, dplyr::everything())
   gt::gt(xt) %>%
     gt::tab_header(title = title) %>%
     gt::tab_options(
@@ -631,7 +639,8 @@ fmt_corr <- function(x, title) {
       table.font.size = gt::px(10),
       data_row.padding = gt::px(2),
       heading.title.font.size = gt::px(12)
-    )
+    ) %>%
+    gt::sub_missing(missing_text = "")
 }
 
 # Make consistent test-statistic names when wpgsd does not set dimnames
@@ -654,9 +663,6 @@ corr_pfs_disp <- corr_pfs
 rownames(corr_pfs_disp) <- nm_pfs
 colnames(corr_pfs_disp) <- nm_pfs
 
-print(fmt_corr(corr_os_disp, "OS family: correlation matrix for Z statistics (H1/H2 across analyses)"))
-print(fmt_corr(corr_pfs_disp, "PFS family: correlation matrix for Z statistics (H3/H4 across analyses; encoded as local H1/H2)"))
-
 # Combined block-diagonal correlation matrix (OS + PFS)
 corr_all <- matrix(
   0,
@@ -672,7 +678,23 @@ rn_all <- c(paste0("OS_", nm_os), paste0("PFS_", nm_pfs))
 colnames(corr_all) <- rn_all
 rownames(corr_all) <- rn_all
 
-fmt_corr(corr_all, "Combined correlation matrix (block-diagonal OS + PFS)")
+# Display-only: show off-block OS–PFS correlations as missing/blank
+corr_all_disp <- corr_all
+corr_all_disp[seq_len(nrow(corr_os_disp)), jdx_pfs] <- NA_real_
+corr_all_disp[idx_pfs, seq_len(ncol(corr_os_disp))] <- NA_real_
+invisible(NULL)
+```
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr(corr_os_disp, "OS family: correlation matrix for Z statistics (H1/H2 across analyses)")
+```
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr(corr_pfs_disp, "PFS family: correlation matrix for Z statistics (H3/H4 across analyses; encoded as local H1/H2)")
+```
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr(corr_all_disp, "Combined correlation matrix (block-diagonal OS + PFS)")
 ```
 
 ### Iterative testing and graph updates
@@ -936,6 +958,85 @@ adj_table2 %>%
   gt::tab_header(title = "Fully adjusted p-values (minimum familywise error rate for rejection)")
 ```
 
+### Compare to graphicalMCP adjusted p-values and weighted Bonferroni
+
+The fully adjusted p-values above are based on the full iterative procedure (graph updates + WPGSD family testing). For comparison, we can also:
+
+- apply the graphicalMCP shortcut procedure to the sequential p-values, and
+- compute a weighted Bonferroni-style adjusted p-value based on the maximum \(\alpha\) allocated to each hypothesis during the shortcut rejection sequence.
+
+```{r,message=FALSE,warning=FALSE}
+# Shortcut graphicalMCP procedure based on sequential p-values
+res_short <- graphicalMCP::graph_test_shortcut(
+  graph = g0,
+  p = seq_p,
+  alpha = fwer,
+  verbose = FALSE
+)
+
+adj_p_short <- res_short$outputs$adjusted_p
+rej_short <- res_short$outputs$rejected
+
+if (is.numeric(rej_short)) {
+  rej_short_logical <- rep(FALSE, nHypotheses)
+  rej_short_logical[rej_short] <- TRUE
+} else {
+  rej_short_logical <- as.logical(rej_short)
+}
+
+# Track the maximum alpha allocated to each hypothesis in the shortcut rejection sequence
+rejected_order_short <- which(rej_short_logical)[order(adj_p_short[rej_short_logical])]
+
+graphs_short <- list(g0)
+if (length(rejected_order_short) > 0) {
+  gu_short <- graphicalMCP::graph_update(g0, delete = rejected_order_short)
+  graphs_short <- gu_short$intermediate_graphs
+}
+ng_short <- length(graphs_short)
+
+lastWeights_short <- as.numeric(graphs_short[[ng_short]]$hypotheses)
+lastGraph_short <- rep(ng_short, nHypotheses)
+
+if (length(rejected_order_short) > 0) {
+  for (j in seq_along(rejected_order_short)) {
+    h <- rejected_order_short[j]
+    lastWeights_short[h] <- as.numeric(graphs_short[[j]]$hypotheses[h])
+    lastGraph_short[h] <- j
+  }
+}
+
+lastAlpha_short <- fwer * lastWeights_short
+adj_p_wbonf <- ifelse(lastWeights_short > 0, pmin(1, seq_p / lastWeights_short), NA_real_)
+rej_wbonf <- (seq_p <= lastAlpha_short) & (lastWeights_short > 0)
+
+comp_tab <- tibble::tibble(
+  Hypothesis = nameHypotheses,
+  sequential_p = seq_p,
+  rejected_full_iter = rejected_global,
+  adjusted_p_full_iter = adj_table$adjusted_p,
+  rejected_shortcut = rej_short_logical,
+  adjusted_p_shortcut = adj_p_short,
+  max_alpha_alloc_shortcut = lastAlpha_short,
+  adjusted_p_weighted_bonf = adj_p_wbonf,
+  rejected_weighted_bonf = rej_wbonf,
+  last_graph_shortcut = lastGraph_short
+)
+
+comp_tab %>%
+  gt::gt() %>%
+  gt::fmt_number(
+    columns = c(
+      "sequential_p",
+      "adjusted_p_full_iter",
+      "adjusted_p_shortcut",
+      "max_alpha_alloc_shortcut",
+      "adjusted_p_weighted_bonf"
+    ),
+    decimals = 6
+  ) %>%
+  gt::tab_header(title = "Comparison: full iterative vs shortcut graphicalMCP vs weighted Bonferroni")
+```
+
 ### Overall multiplicity graph by iteration {.tabset}
 
 ```{r,message=FALSE,warning=FALSE,results='asis', fig.asp=0.9}
@@ -944,6 +1045,7 @@ for (i in seq_along(graphs_iter)) {
   plot(graphs_iter[[i]],
     layout = layout6,
     vertex.size = 45,
+    vertex.color = cbPalette[c(2, 2, 4, 4, 3, 3)],
     vertex.label.cex = 0.9
   )
   cat("\n\n")

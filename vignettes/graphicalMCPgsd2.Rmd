@@ -38,7 +38,16 @@ This vignette is a variant of the original group sequential design vignette,
 The key differences in this vignette are:
 
 - Graph updates and multiple testing are performed using **graphicalMCP**.
-- Sequential p-values are computed using **gsDesign2** (development branch `605-build-sequential-p-values-for-a-gsdesign2-object`).
+- Sequential p-values are computed using **gsDesign2**.
+
+To install the development version of gsDesign2 from GitHub:
+
+```{r, eval=FALSE}
+# install.packages("remotes")
+remotes::install_github(
+  "Merck/gsDesign2"
+)
+```
 
 Given the complexity involved, substantial effort has been taken to provide methods to check hypothesis testing.
 
@@ -99,13 +108,13 @@ library(kableExtra)
 library(gt)
 library(ggplot2) # For plotting
 library(gsDesign) # Group sequential design capabilities
-library(gsDesign2) # Sequential p-values for gsDesign2 objects (dev branch)
+library(gsDesign2) # Sequential p-values for gsDesign2 objects
 library(graphicalMCP) # Multiplicity evaluation and graph updates
 
 if (!"sequential_pval" %in% getNamespaceExports("gsDesign2")) {
   stop(
-    "This vignette requires a development version of gsDesign2 that exports `sequential_pval()`.\n",
-    "Install branch `605-build-sequential-p-values-for-a-gsdesign2-object` from `Merck/gsDesign2`."
+    "This vignette requires a version of gsDesign2 that exports `sequential_pval()`.\n",
+    "Install the GitHub version from `Merck/gsDesign2`."
   )
 }
 ```
@@ -184,6 +193,9 @@ For the example, we assume 1-sided testing or a non-binding futility bound as re
 Each is demonstrated in the example code for respective hypotheses.
 Efficacy $\alpha$-spending for all group sequential designs uses the @LanDeMets spending function approximating an O'Brien-Fleming bound.
 
+In this vignette we use `gsDesign2::gs_design_ahr()` to create time-to-event (OS/PFS) group sequential designs and `gsDesign2::gs_update_ahr()` to update design bounds at the time of analysis.
+To align the sequential p-values with the `rpact` vignette, we use `info_scale = "h0_info"` and treat the (blinded) information fraction as spending time, \(t_k = n_k / n_K\).
+
 This section needs to be modified by the user to match the study design under consideration.
 Those uncomfortable with coding may wish to design using the
 [gsDesign Shiny app](https://gsdesign.shinyapps.io/prod/) which provides not only a point and click interface, but also a code tab that generates R code that can be copied and plugged in for designs below.
@@ -194,46 +206,24 @@ We assume 50% of the population is in the subgroup of interest.
 A sample size of 378 is driven by overall survival (OS) in the subgroup where we assume a hazard ratio of 0.65.
 Here we assume a one-sided group sequential design with no futility bound.
 
-```{r, results='asis'}
-osmedian <- 12 # Median control survival
-# Derive group sequential design for OS in the targeted subgroup
-ossub <- gsDesign::gsSurv(
-  k = 3, # 3 analyses for OS
-  test.type = 1, # Efficacy bound only (no futility)
-  alpha = alphaHypotheses[1], # Allocated alpha from design hypothesis group
-  beta = 0.1, # Type 2 error (1 - power)
-  hr = 0.65, # Assumed hazard ratio for power calculation
-  timing = c(0.61, 0.82), # Choose these to match targeted calendar timing of analyses
-  sfu = sfLDOF, # Spending function to approximate O'Brien-Fleming bound
-  lambdaC = log(2) / osmedian, # Exponential control failure rate
-  eta = 0.001, # Exponential dropout rate
-  gamma = c(2.5, 5, 7.5, 10), # Relative enrollment rates by time period
-  R = c(2, 2, 2, 12), # Duration of time periods for rates in gamma
-  T = 42, # Planned study duration for OS
-  minfup = 24 # Planned minimum follow-up after end of enrollment
-)
-tab <- gsDesign::gsBoundSummary(ossub)
-rownames(tab) <- 1:nrow(tab)
-cat(summary(ossub))
-```
-
-The above text was automatically generated and could be edited appropriately for description of the design.
-Following is a summary table describing study bounds.
-
 ```{r}
-# tab %>% kable(caption = "Design for OS in the subgroup.") %>% kable_styling()
-tab %>%
-  gt() %>%
-  tab_header(title = "Design for OS in the Subgroup") %>%
-  cols_align(align = "left", columns = Value) %>%
-  tab_footnote(
-    footnote = "Cumulative boundary crossing probability includes crossing probability at earlier analysis.",
-    locations = cells_body(columns = "Value", rows = c(9, 10, 14, 15))
-  ) %>%
-  tab_footnote(
-    footnote = "Approximate hazard ratio at bound.",
-    locations = cells_body(columns = "Value", rows = c(3, 8, 13))
-  )
+osmedian <- 12 # Median control survival (for context)
+
+ossub <- gsDesign2::gs_design_ahr(
+  alpha = alphaHypotheses[1],
+  beta = 0.1,
+  binding = FALSE,
+  analysis_time = c(0.61, 0.82, 1),
+  info_frac = c(0.61, 0.82, 1),
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = alphaHypotheses[1]),
+  test_lower = FALSE
+)
+
+ossub$bound %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Design for OS in the Subgroup (gsDesign2)")
 ```
 
 #### H2: OS, All
@@ -246,32 +236,25 @@ We use a @HwangShihDeCani bound with $\gamma = -3.25$.
 Study designers should carefully consider implication for parameter choices, particularly if the futility bounds provide sensible guidance for stopping the trial.
 Since the futility bounds are non-binding, the efficacy bound is computed assuming the futility bound is ignored which will control Type I error at the targeted level even if a futility bound is crossed and the trial is continued.
 
-```{r, results = 'asis'}
+```{r}
 hr <- .75
 beta <- .14
-os <- gsDesign::gsSurv(
-  k = 3, test.type = 4, alpha = 0.01, beta = beta, hr = hr,
-  timing = c(0.62, 0.83), sfu = sfLDOF,
-  sfl = sfHSD, sflpar = -3.25,
-  lambdaC = log(2) / 12, eta = 0.001, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 42, minfup = 24
+
+os <- gsDesign2::gs_design_ahr(
+  alpha = 0.01,
+  beta = beta,
+  binding = FALSE,
+  analysis_time = c(0.62, 0.83, 1),
+  info_frac = c(0.62, 0.83, 1),
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = 0.01),
+  test_lower = FALSE
 )
-tab <- gsDesign::gsBoundSummary(os)
-rownames(tab) <- 1:nrow(tab)
-cat(summary(os))
-```
 
-```{r}
-tab %>%
-  kable(caption = "Design for OS in all subjects") %>%
-  kable_styling()
-```
-
-We can also plot different design characteristics. Here, we plot the approximate hazard ratio to cross each bound which may be helpful for design team discussions.
-
-```{r}
-plot(os, plottype = "HR", xlab = "Events")
+os$bound %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Design for OS in All subjects (gsDesign2)")
 ```
 
 #### H3: PFS, Subgroup
@@ -284,26 +267,25 @@ This is an asymmetric 2-sided design with both futility and efficacy boundary cr
 The lower @HwangShihDeCani spending bound with $\gamma = -8$ is intended to be conservative in terms of futility at the interim, but still provide a safety bound for the PFS result in this targeted population.
 This would have to be carefully evaluated by the study design team at the time of design.
 
-```{r, results='asis'}
+```{r}
 hr <- .65
 beta <- .149
-pfssub <- gsDesign::gsSurv(
-  k = 2, test.type = 6, astar = 0.1, alpha = 0.004, beta = beta, hr = hr,
-  timing = .87, sfu = sfLDOF,
-  sfl = sfHSD, sflpar = -8,
-  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14
-)
-tab <- gsDesign::gsBoundSummary(pfssub)
-rownames(tab) <- 1:nrow(tab)
-cat(summary(pfssub))
-```
 
-```{r}
-tab %>%
-  kable(caption = "Design for PFS in the subgroup") %>%
-  kable_styling()
+pfssub <- gsDesign2::gs_design_ahr(
+  alpha = 0.004,
+  beta = beta,
+  binding = FALSE,
+  analysis_time = c(0.87, 1),
+  info_frac = c(0.87, 1),
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = 0.004),
+  test_lower = FALSE
+)
+
+pfssub$bound %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Design for PFS in the Subgroup (gsDesign2)")
 ```
 
 #### H4: PFS, All
@@ -315,18 +297,22 @@ A futility bound could be considered, if appropriate.
 ```{r}
 hr <- .74
 beta <- .15
-pfs <- gsDesign::gsSurv(
-  k = 2, test.type = 1, alpha = 0.004, beta = beta, hr = hr,
-  timing = .86, sfu = sfLDOF,
-  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14
+
+pfs <- gsDesign2::gs_design_ahr(
+  alpha = 0.004,
+  beta = beta,
+  binding = FALSE,
+  analysis_time = c(0.86, 1),
+  info_frac = c(0.86, 1),
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = 0.004),
+  test_lower = FALSE
 )
-tab <- gsDesign::gsBoundSummary(pfs)
-rownames(tab) <- 1:nrow(tab)
-tab %>%
-  kable(caption = "Design for PFS in the overall population") %>%
-  kable_styling()
+
+pfs$bound %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Design for PFS in the Overall population (gsDesign2)")
 ```
 
 #### H5 and H6: ORR
@@ -335,13 +321,13 @@ For objective response rate (ORR), we assume an underlying control rate of 15%.
 In the subgroup population, we have almost 90% power to detect a 20% improvement.
 
 ```{r}
-nBinomial(p1 = .35, p2 = .15, alpha = .0005, n = 378)
+gsDesign::nBinomial(p1 = .35, p2 = .15, alpha = .0005, n = 378)
 ```
 
 In the all subjects population, we have approximately 95% power to detect an improvement in ORR from 15% to 30%.
 
 ```{r}
-nBinomial(p1 = .3, p2 = .15, alpha = .0005, n = 756)
+gsDesign::nBinomial(p1 = .3, p2 = .15, alpha = .0005, n = 756)
 ```
 
 ### Design list
@@ -351,34 +337,7 @@ Since ORR designs are not group sequential, we enter `NULL` values for those in 
 
 ```{r}
 ### THIS NEEDS TO BE MODIFIED TO MATCH STUDY
-gsDlist <- list(ossub, os, pfssub, pfs, NULL, NULL)
-
-# A parallel list of gsDesign2 objects for sequential p-values.
-# These are used only to compute sequential p-values via gsDesign2::sequential_pval().
-# The gsDesign2 objects are constructed with minimal inputs, and we override event and spending time.
-make_gsd2_seq <- function(k, alpha, binding = FALSE, sf = gsDesign::sfLDOF, sfpar = -4) {
-  alpha_obj <- max(alpha, 1e-05)
-  gsDesign2::gs_design_ahr(
-    enroll_rate = gsDesign2::define_enroll_rate(duration = 1, rate = 1),
-    fail_rate = gsDesign2::define_fail_rate(duration = 1, fail_rate = 0.1, hr = 0.7, dropout_rate = 0),
-    alpha = alpha_obj,
-    beta = 0.2,
-    analysis_time = seq_len(k),
-    binding = binding,
-    upper = gsDesign2::gs_spending_bound,
-    upar = list(sf = sf, param = sfpar, total_spend = alpha_obj),
-    test_lower = FALSE
-  )
-}
-
-gsD2list <- list(
-  make_gsd2_seq(k = 3, alpha = alphaHypotheses[1], binding = FALSE),
-  make_gsd2_seq(k = 3, alpha = alphaHypotheses[2], binding = FALSE),
-  make_gsd2_seq(k = 2, alpha = alphaHypotheses[3], binding = FALSE),
-  make_gsd2_seq(k = 2, alpha = alphaHypotheses[4], binding = FALSE),
-  NULL,
-  NULL
-)
+gsD2list <- list(ossub, os, pfssub, pfs, NULL, NULL)
 ```
 
 ### Spending plan and spending time
@@ -429,13 +388,13 @@ All of the above leads to event counts and spending for PFS and OS as follows:
 ```{r}
 ### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
 # PFS, overall population
-pfs$n.I <- c(675, 750)
+events_pfs_all <- c(675, 750)
 # PFS, subgroup
-pfssub$n.I <- c(265, 310)
+events_pfs_sub <- c(265, 310)
 # OS, overall population
-os$n.I <- c(529, 700, 800)
+events_os_all <- c(529, 700, 800)
 # OS, subgroup
-ossub$n.I <- c(185, 245, 295)
+events_os_sub <- c(185, 245, 295)
 ```
 
 ### Nominal p-values for each analysis
@@ -443,7 +402,7 @@ ossub$n.I <- c(185, 245, 295)
 For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99).
 No other entry is required by the user in any other section of the document.
 Calendar timing is also associated with PFS hypotheses for use in spending functions.
-Spending time for OS spending will be input as NULL so that spending will be based on event counts for OS hypotheses.
+Here we use information fraction \(t_k = n_k / n_K\) as spending time for each hypothesis (i.e., `info_scale = "h0_info"`), which aligns the sequential p-value calculation with `rpact`.
 
 ```{r,warnings=FALSE,message=FALSE}
 ### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
@@ -467,12 +426,13 @@ inputResults <- tibble(
   # Example with no rejections
   # nominalP = rep(.03, 12),
   Analysis = c(1:3, 1:3, 1:2, 1:2, 1, 1),
-  events = c(ossub$n.I, os$n.I, pfssub$n.I, pfs$n.I, NA, NA),
+  events = c(events_os_sub, events_os_all, events_pfs_sub, events_pfs_all, NA, NA),
+  # Use information fraction ("h0_info") as spending time for each hypothesis
   spendingTime = c(
-    ossub$n.I / max(ossub$n.I),
-    ossub$n.I / max(ossub$n.I),
-    pfssub$n.I / max(pfssub$n.I),
-    pfssub$n.I / max(pfssub$n.I),
+    events_os_sub / max(events_os_sub),
+    events_os_all / max(events_os_all),
+    events_pfs_sub / max(events_pfs_sub),
+    events_pfs_all / max(events_pfs_all),
     NA, NA
   )
 )
@@ -640,10 +600,10 @@ for (i in 1:nHypotheses) {
     as.character(EOCtab$lastAlpha[i]),
     sep = ""
   )
-  d <- gsDlist[[i]]
+  d2 <- gsD2list[[i]]
   # If not group sequential for this hypothesis, print the max alpha allocated
   # and the nominal p-value
-  if (is.null(d)) {
+  if (is.null(d2)) {
     cat("Maximum alpha allocated: ")
     cat(EOCtab$lastAlpha[i])
     cat("\n\n")
@@ -653,44 +613,39 @@ for (i in 1:nHypotheses) {
   }
   # For group sequential tests, print max alpha allocated and
   # corresponding group sequential bounds
-  if (!is.null(gsDlist[[i]])) {
+  if (!is.null(gsD2list[[i]])) {
     cat("Nominal p-values at each analysis for comparison to bounds in table below:\n\n")
     cat(hresults$nominalP)
     cat("\n\n")
     # Get other info for current hypothesis
     n.I <- hresults$events
     usTime <- hresults$spendingTime
-    n.Iplan <- max(d$n.I)
-    if (length(n.I) == 1) {
-      n.I <- c(n.I, n.Iplan)
-      usTime <- c(usTime, 1)
-    }
     # If no alpha allocated, just print text line to note this along with the 0 alpha allocated
     if (EOCtab$lastAlpha[i] == 0) {
       cat("Maximum alpha allocated: 0\n\n")
       cat("No testing required\n\n")
     }
     if (EOCtab$lastAlpha[i] > 0) {
-      dupdate <- gsDesign::gsDesign(
+      d2_upd <- gsDesign2::gs_update_ahr(
+        x = d2,
         alpha = EOCtab$lastAlpha[i],
-        k = length(n.I),
-        n.I = n.I,
-        usTime = usTime,
-        maxn.IPlan = n.Iplan,
-        n.fix = d$n.fix,
-        test.type = 1,
-        sfu = d$upper$sf,
-        sfupar = d$upper$param
+        ustime = usTime,
+        event_tbl = data.frame(analysis = hresults$Analysis, event = n.I)
       )
-      tabl <- gsDesign::gsBoundSummary(dupdate,
-        Nname = "Events",
-        exclude = c(
-          "B-value", "CP", "CP H1", "Spending",
-          "~delta at bound", "P(Cross) if delta=0",
-          "PP", "P(Cross) if delta=1"
-        )
-      )
-      kable(tabl, caption = xx, row.names = FALSE) %>%
+
+      d2_upd$bound %>%
+        dplyr::filter(.data$bound == "upper") %>%
+        dplyr::left_join(
+          data.frame(analysis = hresults$Analysis, spending_time = usTime),
+          by = "analysis"
+        ) %>%
+        dplyr::transmute(
+          Analysis = .data$analysis,
+          Z = .data$z,
+          `Nominal p (1-sided)` = .data$`nominal p`,
+          `Spending time` = .data$spending_time
+        ) %>%
+        kable(caption = xx, row.names = FALSE) %>%
         kable_styling() %>%
         cat()
       cat("\n\n")

@@ -1,5 +1,5 @@
 ---
-title: "Group sequential design using the graphicalMCP package using hgraph"
+title: "Group sequential design using the graphicalMCP and rpact packages"
 output:
   html_document:
     code_folding: hide
@@ -7,7 +7,7 @@ output:
     toc_depth: 2
 bibliography: gMCPLite.bib
 vignette: >
-  %\VignetteIndexEntry{Group sequential design using the graphicalMCP package using hgraph}
+  %\VignetteIndexEntry{Group sequential design using the graphicalMCP and rpact packages}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -28,14 +28,20 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-This document is intended to evaluate statistical significance for graphical multiplicity control when used with group sequential design [@MaurerBretz2013]. In particular, we demonstrate design and analysis of a complex oncology trial.
+This document is intended to evaluate statistical significance for graphical multiplicity control when used with group sequential design [@MaurerBretz2013]. 
+In particular, we demonstrate design and analysis of a complex oncology trial using the **rpact** package.
 There are many details building on the necessarily simple example provided by @MaurerBretz2013.
-The combination of tools provided by the gMCPLite and gsDesign packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
+The combination of tools provided by the graphicalMCP and rpact packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
+Here we have to add a function to produce sequential p-values for a rpact design object.
+Otherwise, the vignette is essentially the same as the original group sequential design vignettes, but implemented using **rpact** for all group sequential computations.
 This has been found to be particularly valuable to provide a prompt and verifiable conclusion in multiple trials such as @KEYNOTE048 where 14 hypotheses were evaluated using a template such as this.
 
 This vignette is a variant of the original group sequential design vignette,
 [Graphical testing for group sequential design](GraphicalMultiplicity.html).
-The only substantive difference is that the section **"Evaluate hypothesis rejection using gMCPLite"** and subsequent sections have been updated to use the **graphicalMCP** package (while still using `hGraph()` for plotting).
+The key differences in this vignette are:
+
+- Graph updates and multiple testing are performed using **graphicalMCP**.
+- Group sequential boundaries are computed using **rpact**, and we add a small helper to compute **sequential p-values** for an rpact group sequential design.
 
 Given the complexity involved, substantial effort has been taken to provide methods to check hypothesis testing.
 
@@ -95,8 +101,8 @@ library(knitr)
 library(kableExtra)
 library(gt)
 library(ggplot2) # For plotting
-library(gsDesign) # Group sequential design capabilities
-library(gMCPLite) # Multiplicity evaluation
+suppressPackageStartupMessages(library(rpact)) # Group sequential design capabilities
+library(graphicalMCP) # Multiplicity evaluation and graph updates
 ```
 
 ### Multiplicity diagram for hypothesis testing
@@ -109,9 +115,8 @@ Reallocation for each endpoint proceeds from the subgroup to the overall populat
 If the overall population hypothesis is rejected for a given endpoint, the reallocation is split between the two populations for another endpoint.
 The choice for allocation and reallocation illustrated here is to demonstrate a complex multiplicity scenario; when actually applying this method the allocation and reallocation choices should be carefully considered.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, fig.asp=0.9}
 ### THIS CODE NEEDS TO BE MODIFIED FOR YOUR STUDY
-# If needed, see help file for gMCPLite::hGraph() for explanation of parameters below
 # Hypothesis names
 nameHypotheses <- c(
   "H1: OS\n Subgroup",
@@ -135,15 +140,32 @@ m <- matrix(c(
 # Initial Type I error assigned to each hypothesis (one-sided)
 alphaHypotheses <- c(.01, .01, .004, 0.000, 0.0005, .0005)
 fwer <- sum(alphaHypotheses)
-# Make a ggplot representation of the above specification and display it
-g <- gMCPLite::hGraph(6,
-  alphaHypotheses = alphaHypotheses, m = m, nameHypotheses = nameHypotheses,
-  palette = cbPalette,
-  halfWid = 1, halfHgt = .35, xradius = 2.5, yradius = 1, offset = 0, trhw = .15,
-  x = c(-1.25, 1.25, -2.5, 2.5, -1.25, 1.25), y = c(2, 2, 1, 1, 0, 0),
-  trprop = 0.4, fill = as.character(c(2, 2, 4, 4, 3, 3))
-) 
-print(g)
+
+fill_idx <- c(2, 2, 4, 4, 3, 3)
+vertex_color_map <- stats::setNames(cbPalette[fill_idx], nameHypotheses)
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = stats::setNames(alphaHypotheses / fwer, nameHypotheses),
+  transitions = m,
+  hyp_names = nameHypotheses
+)
+
+layout6 <- rbind(
+  c(0.28, 0.74),
+  c(0.72, 0.74),
+  c(0.18, 0.50),
+  c(0.82, 0.50),
+  c(0.28, 0.26),
+  c(0.72, 0.26)
+)
+
+plot(g0,
+  layout = layout6,
+  vertex.size = 45,
+  vertex.label.cex = 0.9,
+  vertex.color = unname(vertex_color_map[names(g0$hypotheses)]),
+  margin = 0.25
+)
 ```
 
 This testing scheme can result in what might be referred to as time travel for passing of $\alpha$.
@@ -157,12 +179,9 @@ For the example, we assume 1-sided testing or a non-binding futility bound as re
 Each is demonstrated in the example code for respective hypotheses.
 Efficacy $\alpha$-spending for all group sequential designs uses the @LanDeMets spending function approximating an O'Brien-Fleming bound.
 
-Note: `gsDesign::gsSurv()` supports multiple event-driven sample size methods, and its default is not `"Schoenfeld"`.
-To align results with the `rpact`-based vignette, we set `method = "Schoenfeld"` in the designs below.
-
 This section needs to be modified by the user to match the study design under consideration.
 Those uncomfortable with coding may wish to design using the
-[gsDesign Shiny app](https://gsdesign.shinyapps.io/prod/) which provides not only a point and click interface, but also a code tab that generates R code that can be copied and plugged in for designs below.
+[rpact Shiny app](https://www.rpact.org/) or other validated tooling which provides not only a point and click interface, but also reproducible R code.
 
 #### H1: OS, Subgroup
 
@@ -172,45 +191,26 @@ Here we assume a one-sided group sequential design with no futility bound.
 
 ```{r, results='asis'}
 osmedian <- 12 # Median control survival
-# Derive group sequential design for OS in the targeted subgroup
-ossub <- gsDesign::gsSurv(
-  k = 3, # 3 analyses for OS
-  test.type = 1, # Efficacy bound only (no futility)
-  alpha = alphaHypotheses[1], # Allocated alpha from design hypothesis group
-  beta = 0.1, # Type 2 error (1 - power)
-  hr = 0.65, # Assumed hazard ratio for power calculation
-  timing = c(0.61, 0.82), # Choose these to match targeted calendar timing of analyses
-  sfu = sfLDOF, # Spending function to approximate O'Brien-Fleming bound
-  lambdaC = log(2) / osmedian, # Exponential control failure rate
-  eta = 0.001, # Exponential dropout rate
-  gamma = c(2.5, 5, 7.5, 10), # Relative enrollment rates by time period
-  R = c(2, 2, 2, 12), # Duration of time periods for rates in gamma
-  T = 42, # Planned study duration for OS
-  minfup = 24, # Planned minimum follow-up after end of enrollment
-  method = "Schoenfeld"
+# Group sequential design for OS in the subgroup (rpact)
+ossub <- rpact::getDesignGroupSequential(
+  kMax = 3,
+  alpha = alphaHypotheses[1],
+  beta = 0.1,
+  sided = 1,
+  informationRates = c(0.61, 0.82, 1),
+  typeOfDesign = "asOF"
 )
-tab <- gsDesign::gsBoundSummary(ossub)
-rownames(tab) <- 1:nrow(tab)
-cat(summary(ossub))
+print(ossub)
 ```
 
-The above text was automatically generated and could be edited appropriately for description of the design.
-Following is a summary table describing study bounds.
-
 ```{r}
-# tab %>% kable(caption = "Design for OS in the subgroup.") %>% kable_styling()
-tab %>%
-  gt() %>%
-  tab_header(title = "Design for OS in the Subgroup") %>%
-  cols_align(align = "left", columns = Value) %>%
-  tab_footnote(
-    footnote = "Cumulative boundary crossing probability includes crossing probability at earlier analysis.",
-    locations = cells_body(columns = "Value", rows = c(9, 10, 14, 15))
+as.data.frame(ossub) %>%
+  select(
+    stages, informationRates, criticalValues,
+    stageLevels, alphaSpent
   ) %>%
-  tab_footnote(
-    footnote = "Approximate hazard ratio at bound.",
-    locations = cells_body(columns = "Value", rows = c(3, 8, 13))
-  )
+  kable(caption = "Design for OS in the Subgroup (rpact)") %>%
+  kable_styling()
 ```
 
 #### H2: OS, All
@@ -226,23 +226,29 @@ Since the futility bounds are non-binding, the efficacy bound is computed assumi
 ```{r, results = 'asis'}
 hr <- .75
 beta <- .14
-os <- gsDesign::gsSurv(
-  k = 3, test.type = 4, alpha = 0.01, beta = beta, hr = hr,
-  timing = c(0.62, 0.83), sfu = sfLDOF,
-  sfl = sfHSD, sflpar = -3.25,
-  lambdaC = log(2) / 12, eta = 0.001, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 42, minfup = 24,
-  method = "Schoenfeld"
+
+os <- rpact::getDesignGroupSequential(
+  kMax = 3,
+  alpha = 0.01,
+  beta = beta,
+  sided = 1,
+  informationRates = c(0.62, 0.83, 1),
+  typeOfDesign = "asOF",
+  typeBetaSpending = "bsHSD",
+  gammaB = -3.25,
+  bindingFutility = FALSE,
+  futilityStops = c(TRUE, FALSE)
 )
-tab <- gsDesign::gsBoundSummary(os)
-rownames(tab) <- 1:nrow(tab)
-cat(summary(os))
+print(os)
 ```
 
 ```{r}
-tab %>%
-  kable(caption = "Design for OS in all subjects") %>%
+as.data.frame(os) %>%
+  select(
+    stages, informationRates, criticalValues,
+    futilityBounds, stageLevels, alphaSpent
+  ) %>%
+  kable(caption = "Design for OS in all subjects (rpact)") %>%
   kable_styling()
 ```
 
@@ -265,23 +271,29 @@ This would have to be carefully evaluated by the study design team at the time o
 ```{r, results='asis'}
 hr <- .65
 beta <- .149
-pfssub <- gsDesign::gsSurv(
-  k = 2, test.type = 6, astar = 0.1, alpha = 0.004, beta = beta, hr = hr,
-  timing = .87, sfu = sfLDOF,
-  sfl = sfHSD, sflpar = -8,
-  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14,
-  method = "Schoenfeld"
+
+pfssub <- rpact::getDesignGroupSequential(
+  kMax = 2,
+  alpha = 0.004,
+  beta = beta,
+  sided = 1,
+  informationRates = c(0.87, 1),
+  typeOfDesign = "asOF",
+  typeBetaSpending = "bsHSD",
+  gammaB = -8,
+  bindingFutility = FALSE,
+  futilityStops = TRUE
 )
-tab <- gsDesign::gsBoundSummary(pfssub)
-rownames(tab) <- 1:nrow(tab)
-cat(summary(pfssub))
+print(pfssub)
 ```
 
 ```{r}
-tab %>%
-  kable(caption = "Design for PFS in the subgroup") %>%
+as.data.frame(pfssub) %>%
+  select(
+    stages, informationRates, criticalValues,
+    futilityBounds, stageLevels, alphaSpent
+  ) %>%
+  kable(caption = "Design for PFS in the subgroup (rpact)") %>%
   kable_styling()
 ```
 
@@ -294,18 +306,22 @@ A futility bound could be considered, if appropriate.
 ```{r}
 hr <- .74
 beta <- .15
-pfs <- gsDesign::gsSurv(
-  k = 2, test.type = 1, alpha = 0.004, beta = beta, hr = hr,
-  timing = .86, sfu = sfLDOF,
-  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14,
-  method = "Schoenfeld"
+
+pfs <- rpact::getDesignGroupSequential(
+  kMax = 2,
+  alpha = 0.004,
+  beta = beta,
+  sided = 1,
+  informationRates = c(0.86, 1),
+  typeOfDesign = "asOF"
 )
-tab <- gsDesign::gsBoundSummary(pfs)
-rownames(tab) <- 1:nrow(tab)
-tab %>%
-  kable(caption = "Design for PFS in the overall population") %>%
+
+as.data.frame(pfs) %>%
+  select(
+    stages, informationRates, criticalValues,
+    stageLevels, alphaSpent
+  ) %>%
+  kable(caption = "Design for PFS in the overall population (rpact)") %>%
   kable_styling()
 ```
 
@@ -315,13 +331,28 @@ For objective response rate (ORR), we assume an underlying control rate of 15%.
 In the subgroup population, we have almost 90% power to detect a 20% improvement.
 
 ```{r}
-nBinomial(p1 = .35, p2 = .15, alpha = .0005, n = 378)
+# Approximate power for ORR in subgroup (normal approximation)
+rpact::getPowerRates(
+  groups = 2,
+  pi1 = 0.35,
+  pi2 = 0.15,
+  riskRatio = FALSE,
+  alpha = 0.0005,
+  maxNumberOfSubjects = 378
+)
 ```
 
 In the all subjects population, we have approximately 95% power to detect an improvement in ORR from 15% to 30%.
 
 ```{r}
-nBinomial(p1 = .3, p2 = .15, alpha = .0005, n = 756)
+rpact::getPowerRates(
+  groups = 2,
+  pi1 = 0.30,
+  pi2 = 0.15,
+  riskRatio = FALSE,
+  alpha = 0.0005,
+  maxNumberOfSubjects = 756
+)
 ```
 
 ### Design list
@@ -382,13 +413,13 @@ All of the above leads to event counts and spending for PFS and OS as follows:
 ```{r}
 ### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
 # PFS, overall population
-pfs$n.I <- c(675, 750)
+events_pfs_all <- c(675, 750)
 # PFS, subgroup
-pfssub$n.I <- c(265, 310)
+events_pfs_sub <- c(265, 310)
 # OS, overall population
-os$n.I <- c(529, 700, 800)
+events_os_all <- c(529, 700, 800)
 # OS, subgroup
-ossub$n.I <- c(185, 245, 295)
+events_os_sub <- c(185, 245, 295)
 ```
 
 ### Nominal p-values for each analysis
@@ -420,12 +451,13 @@ inputResults <- tibble(
   # Example with no rejections
   # nominalP = rep(.03, 12),
   Analysis = c(1:3, 1:3, 1:2, 1:2, 1, 1),
-  events = c(ossub$n.I, os$n.I, pfssub$n.I, pfs$n.I, NA, NA),
+  events = c(events_os_sub, events_os_all, events_pfs_sub, events_pfs_all, NA, NA),
+  # Use information fraction ("h0_info") as spending time for each hypothesis
   spendingTime = c(
-    ossub$n.I / max(ossub$n.I),
-    ossub$n.I / max(ossub$n.I),
-    pfssub$n.I / max(pfssub$n.I),
-    pfssub$n.I / max(pfssub$n.I),
+    events_os_sub / max(events_os_sub),
+    events_os_all / max(events_os_all),
+    events_pfs_sub / max(events_pfs_sub),
+    events_pfs_all / max(events_pfs_all),
     NA, NA
   )
 )
@@ -443,6 +475,55 @@ We delay showing these until after display of the sequence of multiplicity graph
 
 ```{r,message=FALSE}
 ### USER SHOULD NOT NEED TO MODIFY THIS CODE
+sequentialPValue <- function(
+  design_type,
+  sided,
+  informationRates,
+  events,
+  nominalP,
+  futility = NULL
+) {
+  kMax <- length(informationRates)
+  if (length(events) != kMax || length(nominalP) != kMax) {
+    stop("`events`, `nominalP`, and `informationRates` must have same length.")
+  }
+
+  # Build rpact design; repeated p-values are invariant to `alpha` here
+  if (is.null(futility)) {
+    design <- rpact::getDesignGroupSequential(
+      kMax = kMax,
+      alpha = 0.025,
+      beta = 0.2,
+      sided = sided,
+      informationRates = informationRates,
+      typeOfDesign = design_type
+    )
+  } else {
+    design <- rpact::getDesignGroupSequential(
+      kMax = kMax,
+      alpha = 0.025,
+      beta = futility$beta,
+      sided = sided,
+      informationRates = informationRates,
+      typeOfDesign = design_type,
+      typeBetaSpending = futility$typeBetaSpending,
+      gammaB = futility$gammaB,
+      bindingFutility = isTRUE(futility$bindingFutility),
+      futilityStops = futility$futilityStops
+    )
+  }
+
+  # 1-sided z-scores (upper direction) from nominal p-values
+  z <- stats::qnorm(1 - nominalP)
+  dat <- rpact::getDataset(
+    cumEvents = events,
+    cumLogRanks = z,
+    cumAllocationRatios = rep(1, kMax)
+  )
+  sr <- rpact::getStageResults(design = design, dataInput = dat, stage = kMax)
+  as.numeric(rpact::getRepeatedPValues(sr))[kMax]
+}
+
 EOCtab <- NULL
 EOCtab <- inputResults %>%
   group_by(H) %>%
@@ -454,11 +535,36 @@ for (EOCtabline in 1:nHypotheses) {
   EOCtab$seqp[EOCtabline] <-
     ifelse(is.null(gsDlist[[EOCtabline]]), EOCtab$nominalP[EOCtabline], {
       tem <- filter(inputResults, H == EOCtabline)
+      # Sequential p-value = repeated p-value at last available analysis
+      d <- gsDlist[[EOCtabline]]
+
+      fut <- NULL
+      if (EOCtabline == 2) {
+        fut <- list(
+          beta = beta,
+          typeBetaSpending = "bsHSD",
+          gammaB = -3.25,
+          bindingFutility = FALSE,
+          futilityStops = c(TRUE, FALSE)
+        )
+      }
+      if (EOCtabline == 3) {
+        fut <- list(
+          beta = beta,
+          typeBetaSpending = "bsHSD",
+          gammaB = -8,
+          bindingFutility = FALSE,
+          futilityStops = TRUE
+        )
+      }
+
       sequentialPValue(
-        gsD = gsDlist[[EOCtabline]], interval = c(.0001, .9999),
-        n.I = tem$events,
-        Z = -qnorm(tem$nominalP),
-        usTime = tem$spendingTime
+        design_type = as.data.frame(d)$typeOfDesign[1],
+        sided = as.data.frame(d)$sided[1],
+        informationRates = tem$spendingTime,
+        events = tem$events,
+        nominalP = tem$nominalP,
+        futility = fut
       )
     })
 }
@@ -544,25 +650,18 @@ names(EOCtabx) <- c(
 
 ### Multiplicity graph sequence from graphicalMCP {.tabset}
 
-```{r,message=FALSE,warning=FALSE,results='asis'}
+```{r,message=FALSE,warning=FALSE,results='asis',fig.asp=0.95}
 ### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
 for (i in 1:ngraphs) {
-  mx <- graphs[[i]]$transitions
-  rownames(mx) <- NULL
-  colnames(mx) <- NULL
-  g <- gMCPLite::hGraph(
-    nHypotheses = nHypotheses,
-    alphaHypotheses = graphs[[i]]$hypotheses * fwer,
-    m = mx,
-    nameHypotheses = nameHypotheses,
-    palette = cbPalette,
-    halfWid = 1, halfHgt = .35, xradius = 2.5, yradius = 1, offset = 0, trhw = .15,
-    x = c(-1.25, 1.25, -2.5, 2.5, -1.25, 1.25), y = c(2, 2, 1, 1, 0, 0),
-    trprop = .4, fill = as.character(c(2, 2, 4, 4, 3, 3))
-  ) 
   cat(" \n")
   cat("####", paste(" Graph", as.character(i), " \n\n"))
-  print(g)
+  plot(graphs[[i]],
+    layout = layout6,
+    vertex.size = 45,
+    vertex.label.cex = 0.9,
+    vertex.color = unname(vertex_color_map[names(graphs[[i]]$hypotheses)]),
+    margin = 0.25
+  )
   cat(" \n\n\n")
 }
 ```
@@ -616,40 +715,70 @@ for (i in 1:nHypotheses) {
     cat("Nominal p-values at each analysis for comparison to bounds in table below:\n\n")
     cat(hresults$nominalP)
     cat("\n\n")
-    # Get other info for current hypothesis
-    n.I <- hresults$events
-    usTime <- hresults$spendingTime
-    n.Iplan <- max(d$n.I)
-    if (length(n.I) == 1) {
-      n.I <- c(n.I, n.Iplan)
-      usTime <- c(usTime, 1)
-    }
     # If no alpha allocated, just print text line to note this along with the 0 alpha allocated
     if (EOCtab$lastAlpha[i] == 0) {
       cat("Maximum alpha allocated: 0\n\n")
       cat("No testing required\n\n")
     }
     if (EOCtab$lastAlpha[i] > 0) {
-      dupdate <- gsDesign::gsDesign(
-        alpha = EOCtab$lastAlpha[i],
-        k = length(n.I),
-        n.I = n.I,
-        usTime = usTime,
-        maxn.IPlan = n.Iplan,
-        n.fix = d$n.fix,
-        test.type = 1,
-        sfu = d$upper$sf,
-        sfupar = d$upper$param
-      )
-      tabl <- gsDesign::gsBoundSummary(dupdate,
-        Nname = "Events",
-        exclude = c(
-          "B-value", "CP", "CP H1", "Spending",
-          "~delta at bound", "P(Cross) if delta=0",
-          "PP", "P(Cross) if delta=1"
+      # Update design at the maximum allocated alpha and observed spending time
+      informationRates <- hresults$spendingTime
+      kMax <- length(informationRates)
+
+      fut <- NULL
+      if (i == 2) {
+        fut <- list(
+          beta = beta,
+          typeBetaSpending = "bsHSD",
+          gammaB = -3.25,
+          bindingFutility = FALSE,
+          futilityStops = c(TRUE, FALSE)
         )
-      )
-      kable(tabl, caption = xx, row.names = FALSE) %>%
+      }
+      if (i == 3) {
+        fut <- list(
+          beta = beta,
+          typeBetaSpending = "bsHSD",
+          gammaB = -8,
+          bindingFutility = FALSE,
+          futilityStops = TRUE
+        )
+      }
+
+      if (is.null(fut)) {
+        dupdate <- rpact::getDesignGroupSequential(
+          kMax = kMax,
+          alpha = EOCtab$lastAlpha[i],
+          beta = 0.2,
+          sided = 1,
+          informationRates = informationRates,
+          typeOfDesign = as.data.frame(d)$typeOfDesign[1]
+        )
+      } else {
+        dupdate <- rpact::getDesignGroupSequential(
+          kMax = kMax,
+          alpha = EOCtab$lastAlpha[i],
+          beta = fut$beta,
+          sided = 1,
+          informationRates = informationRates,
+          typeOfDesign = as.data.frame(d)$typeOfDesign[1],
+          typeBetaSpending = fut$typeBetaSpending,
+          gammaB = fut$gammaB,
+          bindingFutility = isTRUE(fut$bindingFutility),
+          futilityStops = fut$futilityStops
+        )
+      }
+
+      as.data.frame(dupdate) %>%
+        select(
+          stages,
+          informationRates,
+          criticalValues,
+          stageLevels,
+          alphaSpent,
+          futilityBounds
+        ) %>%
+        kable(caption = xx, row.names = FALSE) %>%
         kable_styling() %>%
         cat()
       cat("\n\n")
@@ -666,7 +795,7 @@ options(old)
 ## Session information
 
 You can use `sessionInfo()` to document the versions of R and R packages used to render this document.
-Note, in particular, that version 3.1 or later of the gsDesign package is needed.
+Note, in particular, that the **rpact** package is required.
 
 ## References
 
