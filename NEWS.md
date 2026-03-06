@@ -1,3 +1,12 @@
+# gMCPLite 0.1.8
+
+## New features
+
+- In `hGraph()`, transition arrows are now drawn as curves by default using
+  `geom_curve()`. Two new parameters `curvedflag` (default `TRUE`) and
+  `curvature` (default `0.5`) control this behavior. Set `curvedflag = FALSE`
+  to revert to straight arrows using `geom_segment()`.
+
 # gMCPLite 0.1.7
 
 ## Maintenance
