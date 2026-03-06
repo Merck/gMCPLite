@@ -416,8 +416,9 @@ ossub$n.I <- c(185, 245, 295)
 
 For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99).
 No other entry is required by the user in any other section of the document.
-Calendar timing is also associated with PFS hypotheses for use in spending functions.
-Spending time for OS spending will be input as NULL so that spending will be based on event counts for OS hypotheses.
+We use the subgroup information fraction as spending time for each hypothesis.
+Since we assume that the targeted event count is reached in the subgroup for each endpoint (PFS and OS), the spending time reaches 1 for the final analysis of each hypothesis.
+Another common approach is to use the minimum of planned and actual information fraction for each hypothesis at interim analyses and then spend full alpha at the final analysis.
 
 ```{r,warnings=FALSE,message=FALSE}
 ### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY

@@ -186,7 +186,7 @@ ossub <- gsDesign::gsSurv(
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(ossub)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 cat(summary(ossub))
 ```
 
@@ -232,7 +232,7 @@ os <- gsDesign::gsSurv(
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(os)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 cat(summary(os))
 ```
 
@@ -271,7 +271,7 @@ pfssub <- gsDesign::gsSurv(
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfssub)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 cat(summary(pfssub))
 ```
 
@@ -391,8 +391,9 @@ ossub$n.I <- c(185, 245, 295)
 
 For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99).
 No other entry is required by the user in any other section of the document.
-Calendar timing is also associated with PFS hypotheses for use in spending functions.
-Spending time for OS spending will be input as NULL so that spending will be based on event counts for OS hypotheses.
+We use the subgroup information fraction as spending time for each hypothesis.
+Since we assume that the targeted event count is reached in the subgroup for each endpoint (PFS and OS), the spending time reaches 1 for the final analysis of each hypothesis.
+Another common approach is to use the minimum of planned and actual information fraction for each hypothesis at interim analyses and then spend full alpha at the final analysis.
 
 ```{r,warnings=FALSE,message=FALSE}
 ### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
@@ -451,7 +452,7 @@ for (EOCtabline in 1:nHypotheses) {
     ifelse(is.null(gsDlist[[EOCtabline]]), EOCtab$nominalP[EOCtabline], {
       tem <- filter(inputResults, H == EOCtabline)
       sequentialPValue(
-        gsD = gsDlist[[EOCtabline]], interval = c(.0001, .9999),
+        gsD = gsDlist[[EOCtabline]], interval = c(1e-05, .9999),
         n.I = tem$events,
         Z = -qnorm(tem$nominalP),
         usTime = tem$spendingTime
@@ -496,7 +497,7 @@ EOCtab$adjPValues <- result@adjPValues
 ngraphs <- length(result@graphs)
 # Set up tibble with hypotheses rejected at each stage
 rejected <- NULL
-for (i in 1:length(result@graphs)) {
+for (i in seq_along(result@graphs)) {
   rejected <- rbind(
     rejected,
     tibble(
@@ -519,7 +520,7 @@ lastGraph <- rep(ngraphs, nrow(EOCtab))
 
 # We will update for rejected hypotheses with last positive weight for each
 if (ngraphs > 1) {
-  for (i in 1:(ngraphs - 1)) {
+  for (i in seq_len(ngraphs - 1)) {
     lastWeights[rejected$H[i]] <- as.numeric(result@graphs[[i]]@weights[rejected$H[i]])
     lastGraph[rejected$H[i]] <- i
   }
@@ -540,7 +541,7 @@ names(EOCtabx) <- c(
 
 ```{r,message=FALSE,warning=FALSE,results='asis'}
 ### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
-for (i in 1:ngraphs) {
+for (i in seq_len(ngraphs)) {
   mx <- result@graphs[[i]]@m
   rownames(mx) <- NULL
   colnames(mx) <- NULL

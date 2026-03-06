@@ -221,7 +221,7 @@ ossub <- gsDesign2::gs_design_ahr(
   test_lower = FALSE
 )
 
-ossub$bound %>%
+gsDesign2::gs_bound_summary(ossub) %>%
   gt::gt() %>%
   gt::tab_header(title = "Design for OS in the Subgroup (gsDesign2)")
 ```
@@ -252,7 +252,7 @@ os <- gsDesign2::gs_design_ahr(
   test_lower = FALSE
 )
 
-os$bound %>%
+gsDesign2::gs_bound_summary(os) %>%
   gt::gt() %>%
   gt::tab_header(title = "Design for OS in All subjects (gsDesign2)")
 ```
@@ -283,7 +283,7 @@ pfssub <- gsDesign2::gs_design_ahr(
   test_lower = FALSE
 )
 
-pfssub$bound %>%
+gsDesign2::gs_bound_summary(pfssub) %>%
   gt::gt() %>%
   gt::tab_header(title = "Design for PFS in the Subgroup (gsDesign2)")
 ```
@@ -310,7 +310,7 @@ pfs <- gsDesign2::gs_design_ahr(
   test_lower = FALSE
 )
 
-pfs$bound %>%
+gsDesign2::gs_bound_summary(pfs) %>%
   gt::gt() %>%
   gt::tab_header(title = "Design for PFS in the Overall population (gsDesign2)")
 ```
@@ -401,8 +401,9 @@ events_os_sub <- c(185, 245, 295)
 
 For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99).
 No other entry is required by the user in any other section of the document.
-Calendar timing is also associated with PFS hypotheses for use in spending functions.
-Here we use information fraction \(t_k = n_k / n_K\) as spending time for each hypothesis (i.e., `info_scale = "h0_info"`), which aligns the sequential p-value calculation with `rpact`.
+We use the subgroup information fraction as spending time for each hypothesis.
+Since we assume that the targeted event count is reached in the subgroup for each endpoint (PFS and OS), the spending time reaches 1 for the final analysis of each hypothesis.
+Another common approach is to use the minimum of planned and actual information fraction for each hypothesis at interim analyses and then spend full alpha at the final analysis.
 
 ```{r,warnings=FALSE,message=FALSE}
 ### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
@@ -430,9 +431,9 @@ inputResults <- tibble(
   # Use information fraction ("h0_info") as spending time for each hypothesis
   spendingTime = c(
     events_os_sub / max(events_os_sub),
-    events_os_all / max(events_os_all),
+    events_os_sub / max(events_os_sub),
     events_pfs_sub / max(events_pfs_sub),
-    events_pfs_all / max(events_pfs_all),
+    events_pfs_sub / max(events_pfs_sub),
     NA, NA
   )
 )
