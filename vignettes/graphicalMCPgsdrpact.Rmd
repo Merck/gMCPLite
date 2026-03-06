@@ -456,9 +456,9 @@ inputResults <- tibble(
   # Use information fraction ("h0_info") as spending time for each hypothesis
   spendingTime = c(
     events_os_sub / max(events_os_sub),
-    events_os_all / max(events_os_sub),
+    events_os_all / max(events_os_all),
     events_pfs_sub / max(events_pfs_sub),
-    events_pfs_all / max(events_pfs_sub),
+    events_pfs_all / max(events_pfs_all),
     NA, NA
   )
 )
