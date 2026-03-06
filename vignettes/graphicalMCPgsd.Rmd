@@ -1,5 +1,5 @@
 ---
-title: "Graphical testing for group sequential design"
+title: "Group sequential design using the graphicalMCP package using hgraph"
 output:
   html_document:
     code_folding: hide
@@ -7,7 +7,7 @@ output:
     toc_depth: 2
 bibliography: gMCPLite.bib
 vignette: >
-  %\VignetteIndexEntry{Graphical testing for group sequential design}
+  %\VignetteIndexEntry{Group sequential design using the graphicalMCP package using hgraph}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -32,6 +32,10 @@ This document is intended to evaluate statistical significance for graphical mul
 There are many details building on the necessarily simple example provided by @MaurerBretz2013.
 The combination of tools provided by the gMCPLite and gsDesign packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
 This has been found to be particularly valuable to provide a prompt and verifiable conclusion in multiple trials such as @KEYNOTE048 where 14 hypotheses were evaluated using a template such as this.
+
+This vignette is a variant of the original group sequential design vignette,
+[Graphical testing for group sequential design](GraphicalMultiplicity.html).
+The only substantive difference is that the section **"Evaluate hypothesis rejection using gMCPLite"** and subsequent sections have been updated to use the **graphicalMCP** package (while still using `hGraph()` for plotting).
 
 Given the complexity involved, substantial effort has been taken to provide methods to check hypothesis testing.
 
@@ -186,7 +190,7 @@ ossub <- gsDesign::gsSurv(
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(ossub)
-rownames(tab) <- seq_len(nrow(tab))
+rownames(tab) <- 1:nrow(tab)
 cat(summary(ossub))
 ```
 
@@ -232,7 +236,7 @@ os <- gsDesign::gsSurv(
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(os)
-rownames(tab) <- seq_len(nrow(tab))
+rownames(tab) <- 1:nrow(tab)
 cat(summary(os))
 ```
 
@@ -271,7 +275,7 @@ pfssub <- gsDesign::gsSurv(
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfssub)
-rownames(tab) <- seq_len(nrow(tab))
+rownames(tab) <- 1:nrow(tab)
 cat(summary(pfssub))
 ```
 
@@ -452,7 +456,7 @@ for (EOCtabline in 1:nHypotheses) {
     ifelse(is.null(gsDlist[[EOCtabline]]), EOCtab$nominalP[EOCtabline], {
       tem <- filter(inputResults, H == EOCtabline)
       sequentialPValue(
-        gsD = gsDlist[[EOCtabline]], interval = c(1e-05, .9999),
+        gsD = gsDlist[[EOCtabline]], interval = c(.0001, .9999),
         n.I = tem$events,
         Z = -qnorm(tem$nominalP),
         usTime = tem$spendingTime
@@ -463,68 +467,70 @@ EOCtab <- EOCtab %>% select(-"nominalP")
 # kable(EOCtab,caption="Sequential p-values as initially placed in EOCtab") %>% kable_styling()
 ```
 
-### Evaluate hypothesis rejection using gMCPLite
+### Evaluate hypothesis rejection using graphicalMCP
 
-We need to set up a `graph` object as implemented in the gMCPLite package.
+We need to set up an `initial_graph` object as implemented in the graphicalMCP package.
 
 ```{r,message=FALSE,warning=FALSE}
-# Make a graph object
-rownames(m) <- nameHypotheses
-graph <- matrix2graph(m)
-# Add weights to the object based on alpha allocation
-graph <- setWeights(graph, alphaHypotheses / fwer)
-rescale <- 45
-d <- g$layers[[2]]$data
-rownames(d) <- rownames(m)
-# graph@nodeAttr$X <- rescale * d$x * 1.75
-# graph@nodeAttr$Y <- -rescale * d$y * 2
+library(graphicalMCP)
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = alphaHypotheses / fwer,
+  transitions = m,
+  hyp_names = nameHypotheses
+)
 ```
 
 Now we add the sequential p-values and evaluate which hypotheses have been rejected.
 
 ```{r}
-result <- gMCP(graph = graph, pvalues = EOCtab$seqp, alpha = fwer)
-result@rejected
-# now map back into EOCtable (CHECK AGAIN!!!)
-EOCtab$Rejected <- result@rejected
-EOCtab$adjPValues <- result@adjPValues
+result <- graphicalMCP::graph_test_shortcut(
+  graph = g0,
+  p = EOCtab$seqp,
+  alpha = fwer,
+  verbose = TRUE
+)
+
+adj_p <- result$outputs$adjusted_p
+rej <- result$outputs$rejected
+
+if (is.numeric(rej)) {
+  rej_logical <- rep(FALSE, nHypotheses)
+  rej_logical[rej] <- TRUE
+} else {
+  rej_logical <- as.logical(rej)
+}
+
+EOCtab$Rejected <- rej_logical
+EOCtab$adjPValues <- adj_p
 ```
 
 ## Verification of hypotheses rejected
 
 ```{r}
-# Number of graphs is used repeatedly
-ngraphs <- length(result@graphs)
-# Set up tibble with hypotheses rejected at each stage
-rejected <- NULL
-for (i in seq_along(result@graphs)) {
-  rejected <- rbind(
-    rejected,
-    tibble(
-      H = 1:nHypotheses, Stage = i,
-      Rejected = as.logical(result@graphs[[i]]@nodeAttr$rejected)
-    )
-  )
-}
-rejected <- rejected %>%
-  filter(Rejected) %>%
-  group_by(H) %>%
-  summarize(graphRejecting = min(Stage) - 1, .groups = "drop") %>% # Last graph with weight>0 where H rejected
-  arrange(graphRejecting)
+rejected_order <- which(EOCtab$Rejected)[order(EOCtab$adjPValues[EOCtab$Rejected])]
 
-# Get final weights
-# for hypotheses not rejected, this will be final weight where
-# no hypothesis could be rejected
-lastWeights <- as.numeric(result@graphs[[ngraphs]]@weights)
+graphs <- list(g0)
+if (length(rejected_order) > 0) {
+  gu <- graphicalMCP::graph_update(g0, delete = rejected_order)
+  # `intermediate_graphs` includes the initial graph as its first element
+  graphs <- gu$intermediate_graphs
+}
+ngraphs <- length(graphs)
+
+# Final weights for hypotheses not rejected come from the final graph
+lastWeights <- as.numeric(graphs[[ngraphs]]$hypotheses)
 lastGraph <- rep(ngraphs, nrow(EOCtab))
 
-# We will update for rejected hypotheses with last positive weight for each
-if (ngraphs > 1) {
-  for (i in seq_len(ngraphs - 1)) {
-    lastWeights[rejected$H[i]] <- as.numeric(result@graphs[[i]]@weights[rejected$H[i]])
-    lastGraph[rejected$H[i]] <- i
+# For rejected hypotheses, take the hypothesis weight from the graph at which it was rejected
+if (length(rejected_order) > 0) {
+  for (j in seq_along(rejected_order)) {
+    h <- rejected_order[j]
+    lastWeights[h] <- as.numeric(graphs[[j]]$hypotheses[h])
+    lastGraph[h] <- j
   }
 }
+
 EOCtab$lastAlpha <- fwer * lastWeights
 EOCtab$lastGraph <- lastGraph
 EOCtabx <- EOCtab
@@ -537,17 +543,17 @@ names(EOCtabx) <- c(
 # EOCtabx %>% select(c(1:4,7,5:6,8)) %>% kable() %>% kable_styling()
 ```
 
-### Multiplicity graph sequence from gMCPLite {.tabset}
+### Multiplicity graph sequence from graphicalMCP {.tabset}
 
 ```{r,message=FALSE,warning=FALSE,results='asis'}
 ### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
-for (i in seq_len(ngraphs)) {
-  mx <- result@graphs[[i]]@m
+for (i in 1:ngraphs) {
+  mx <- graphs[[i]]$transitions
   rownames(mx) <- NULL
   colnames(mx) <- NULL
   g <- gMCPLite::hGraph(
     nHypotheses = nHypotheses,
-    alphaHypotheses = result@graphs[[i]]@weights * fwer,
+    alphaHypotheses = graphs[[i]]$hypotheses * fwer,
     m = mx,
     nameHypotheses = nameHypotheses,
     palette = cbPalette,
@@ -687,7 +693,7 @@ Note, in particular, that version 3.1 or later of the gsDesign package is needed
 
   // Activate the first real tab
   var tabElements = [
-    "ul#multiplicity-graph-sequence-from-gmcplite li:nth-child(2) button",
+    "ul#multiplicity-graph-sequence-from-graphicalmcp li:nth-child(2) button",
     "ul#bounds-at-final-alpha-allocated-for-group-sequential-tests li:nth-child(2) button",
   ];
 

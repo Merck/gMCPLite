@@ -1,3 +1,10 @@
+# gMCPLite 0.1.8
+
+## Documentation
+
+- Added a new group sequential design vignette variant using the graphicalMCP package
+  for hypothesis rejection evaluation (while keeping `hGraph()` for visualization).
+
 # gMCPLite 0.1.7
 
 ## Maintenance
