@@ -408,3 +408,94 @@ for (i in 1:nHypotheses) {
   }
 }
 ```
+
+## P-value computation {#p-value-computation}
+
+### 1-sided logrank test (OS, PFS)
+
+```r
+logrank_pval <- function(data, stratified = FALSE) {
+  data$event <- 1L - data$CNSR
+  if (stratified) {
+    fit <- survdiff(Surv(AVAL, event) ~ TRT + strata(STRATUM), data = data)
+  } else {
+    fit <- survdiff(Surv(AVAL, event) ~ TRT, data = data)
+  }
+  # IMPORTANT: with strata, obs/exp are matrices (groups x strata); sum across strata
+  obs_ctrl <- if (is.matrix(fit$obs)) sum(fit$obs[1, ]) else fit$obs[1]
+  exp_ctrl <- if (is.matrix(fit$exp)) sum(fit$exp[1, ]) else fit$exp[1]
+  z_sign <- sign(obs_ctrl - exp_ctrl)
+  z <- z_sign * sqrt(fit$chisq)
+  pnorm(-z)  # 1-sided: small when experimental is better
+}
+```
+
+**Key pitfall**: `survdiff()` with `strata()` returns `obs` and `exp` as a **matrix**
+(treatment groups × strata). Using `fit$obs[1]` extracts just the first stratum for the
+control group, giving wrong results. Always check `is.matrix()` and sum across strata.
+
+### Stratified risk difference test (ORR)
+
+```r
+rd_pval <- function(data, stratified = FALSE) {
+  if (!stratified) {
+    # Pooled test (unstratified)
+    ...
+    z <- (p_exp - p_ctrl) / se
+    return(pnorm(-z))
+  }
+  # Stratified: combine stratum-specific RDs with sample size weights
+  strata <- unique(data$STRATUM)
+  for (k in seq_along(strata)) {
+    # Compute rd_s[k], var_s[k], n_s[k] per stratum
+  }
+  w <- n_s / sum(n_s)  # sample size weights
+  rd_combined <- sum(w * rd_s)
+  se_combined <- sqrt(sum(w^2 * var_s))
+  z <- rd_combined / se_combined
+  pnorm(-z)  # 1-sided: small when experimental is better
+}
+```
+
+## Kaplan-Meier plots {#km-plots}
+
+KM plots should include:
+- X-axis grid every 6 months, y-axis grid every 20%
+- HR with 95% CI and 1-sided logrank p-value in upper right corner
+- Number at risk table below the plot at month 0 and every 6 months
+
+Use `gridExtra::grid.arrange()` to stack the KM plot and at-risk table.
+
+## WPGSD analysis {#wpgsd}
+
+The wpgsd package accounts for group sequential and population-induced correlations.
+
+### Correlation matrix construction
+
+For nested populations (BM+ ⊂ Overall), the event-count matrix D has entries:
+- D[Hi_As, Hi_At] = events_i at min(s,t)  (within-hypothesis, across-analysis)
+- D[Hi_As, Hj_At] = intersection events at min(s,t)  (cross-hypothesis)
+- Intersection for nested populations = subgroup events at min(s,t)
+
+**Bug in `generate_corr()` for k > 2**: The function incorrectly computes
+within-hypothesis cross-analysis entries for non-adjacent analyses. Use
+`generate_corr()` only for k = 2. For k > 2, build D manually and compute
+`corr = diag(1/sqrt(diag(D))) %*% D %*% diag(1/sqrt(diag(D)))`.
+
+### generate_bounds and closed_test
+
+```r
+# Sub-graph: 2 hypotheses with full reallocation
+m_sub <- matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
+w <- c(0.5, 0.5)  # weights must be > 0 (gsDesign requires alpha > 0)
+
+bound_wpgsd <- wpgsd::generate_bounds(
+  type = 3, k = n_analyses, w = w, m = m_sub, corr = corr,
+  alpha = total_alpha_for_endpoint,
+  sf = list(gsDesign::sfLDOF, gsDesign::sfLDOF),
+  sfparm = list(0, 0),
+  t = list(info_frac_h1, info_frac_h2)
+)
+
+ct <- wpgsd::closed_test(bound_wpgsd, p_obs)
+```

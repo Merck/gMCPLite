@@ -591,34 +591,65 @@ kable(event_summary %>% tidyr::pivot_wider(
 
 ### Compute nominal p-values {.tabset}
 
-One-sided p-values from Cox regression (OS, PFS) and rate difference test (ORR).
+One-sided p-values from the logrank test (OS, PFS) and asymptotic rate difference test (ORR).
+For overall population hypotheses, analyses are stratified by BM+/BM-.
 
 ```{r}
-# Helper: 1-sided p-value from Cox model (H1: HR < 1)
-cox_pval <- function(data, stratified = FALSE) {
+# Helper: 1-sided logrank p-value (H1: experimental better)
+logrank_pval <- function(data, stratified = FALSE) {
   data$event <- 1L - data$CNSR
-  data$trt01 <- as.integer(data$TRT == "experimental")
   if (stratified) {
-    fit <- coxph(Surv(AVAL, event) ~ trt01 + strata(STRATUM), data = data)
+    fit <- survdiff(Surv(AVAL, event) ~ TRT + strata(STRATUM), data = data)
   } else {
-    fit <- coxph(Surv(AVAL, event) ~ trt01, data = data)
+    fit <- survdiff(Surv(AVAL, event) ~ TRT, data = data)
   }
-  z <- coef(fit) / sqrt(vcov(fit)[1, 1])
-  pnorm(z)  # 1-sided: P(HR < 1)
+  # survdiff orders groups alphabetically: "control" before "experimental"
+  # With strata, obs/exp are matrices (groups x strata); sum across strata
+  obs_ctrl <- if (is.matrix(fit$obs)) sum(fit$obs[1, ]) else fit$obs[1]
+  exp_ctrl <- if (is.matrix(fit$exp)) sum(fit$exp[1, ]) else fit$exp[1]
+  # Observed - Expected > 0 for control means experimental has fewer events (better)
+  z_sign <- sign(obs_ctrl - exp_ctrl)
+
+  z <- z_sign * sqrt(fit$chisq)
+  pnorm(-z)  # 1-sided: small when experimental is better
 }
 
 # Helper: 1-sided p-value for rate difference (H1: p_exp > p_ctrl)
-rd_pval <- function(data) {
-  n_exp <- sum(data$TRT == "experimental")
-  n_ctrl <- sum(data$TRT == "control")
-  resp_exp <- sum(data$AVAL[data$TRT == "experimental"])
-  resp_ctrl <- sum(data$AVAL[data$TRT == "control"])
-  p_exp <- resp_exp / n_exp
-  p_ctrl <- resp_ctrl / n_ctrl
-  p_pool <- (resp_exp + resp_ctrl) / (n_exp + n_ctrl)
-  se <- sqrt(p_pool * (1 - p_pool) * (1 / n_exp + 1 / n_ctrl))
-  if (se == 0) return(0.5)
-  z <- (p_exp - p_ctrl) / se
+# If stratified = TRUE, combines stratum-specific rate differences
+# using sample size (Cochran-Mantel-Haenszel) weights
+rd_pval <- function(data, stratified = FALSE) {
+  if (!stratified) {
+    n_exp <- sum(data$TRT == "experimental")
+    n_ctrl <- sum(data$TRT == "control")
+    resp_exp <- sum(data$AVAL[data$TRT == "experimental"])
+    resp_ctrl <- sum(data$AVAL[data$TRT == "control"])
+    p_exp <- resp_exp / n_exp
+    p_ctrl <- resp_ctrl / n_ctrl
+    p_pool <- (resp_exp + resp_ctrl) / (n_exp + n_ctrl)
+    se <- sqrt(p_pool * (1 - p_pool) * (1 / n_exp + 1 / n_ctrl))
+    if (se == 0) return(0.5)
+    z <- (p_exp - p_ctrl) / se
+    return(pnorm(-z))  # 1-sided: small when experimental is better
+  }
+
+  # Stratified risk difference with sample size weights
+  strata <- unique(data$STRATUM)
+  n_s <- rd_s <- var_s <- numeric(length(strata))
+  for (k in seq_along(strata)) {
+    ds <- data[data$STRATUM == strata[k], ]
+    n_exp <- sum(ds$TRT == "experimental")
+    n_ctrl <- sum(ds$TRT == "control")
+    n_s[k] <- n_exp + n_ctrl
+    p_exp <- sum(ds$AVAL[ds$TRT == "experimental"]) / n_exp
+    p_ctrl <- sum(ds$AVAL[ds$TRT == "control"]) / n_ctrl
+    rd_s[k] <- p_exp - p_ctrl
+    var_s[k] <- p_exp * (1 - p_exp) / n_exp + p_ctrl * (1 - p_ctrl) / n_ctrl
+  }
+  w <- n_s / sum(n_s)  # sample size weights
+  rd_combined <- sum(w * rd_s)
+  se_combined <- sqrt(sum(w^2 * var_s))
+  if (se_combined == 0) return(0.5)
+  z <- rd_combined / se_combined
   pnorm(-z)  # 1-sided: small when experimental is better
 }
 ```
@@ -630,30 +661,30 @@ pvals <- list()
 for (i in seq_along(cut_dates)) {
   d <- adtte[[i]]
 
-  # H1: OS BM+ (analyses 1-3)
-  pvals[[paste0("H1_", i)]] <- cox_pval(d %>% filter(PARAMCD == "OS", STRATUM == "BM+"))
+  # H1: OS BM+ (analyses 1-3) — unstratified logrank
+  pvals[[paste0("H1_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "OS", STRATUM == "BM+"))
 
-  # H2: OS Overall (analyses 1-3)
-  pvals[[paste0("H2_", i)]] <- cox_pval(d %>% filter(PARAMCD == "OS"), stratified = TRUE)
+  # H2: OS Overall (analyses 1-3) — stratified logrank
+  pvals[[paste0("H2_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "OS"), stratified = TRUE)
 
-  # H3: PFS BM+ (analyses 1-2)
+  # H3: PFS BM+ (analyses 1-2) — unstratified logrank
   if (i <= 2) {
-    pvals[[paste0("H3_", i)]] <- cox_pval(d %>% filter(PARAMCD == "PFS", STRATUM == "BM+"))
+    pvals[[paste0("H3_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "PFS", STRATUM == "BM+"))
   }
 
-  # H4: PFS Overall (analyses 1-2)
+  # H4: PFS Overall (analyses 1-2) — stratified logrank
   if (i <= 2) {
-    pvals[[paste0("H4_", i)]] <- cox_pval(d %>% filter(PARAMCD == "PFS"), stratified = TRUE)
+    pvals[[paste0("H4_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "PFS"), stratified = TRUE)
   }
 
-  # H5: ORR BM+ (analysis 1 only)
+  # H5: ORR BM+ (analysis 1 only) — unstratified rate difference
   if (i == 1) {
     pvals[[paste0("H5_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR", STRATUM == "BM+"))
   }
 
-  # H6: ORR Overall (analysis 1 only)
+  # H6: ORR Overall (analysis 1 only) — stratified rate difference
   if (i == 1) {
-    pvals[[paste0("H6_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR"))
+    pvals[[paste0("H6_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR"), stratified = TRUE)
   }
 }
 ```
@@ -704,6 +735,220 @@ inputResults <- tibble(
 )
 kable(inputResults, caption = "Results from simulated trial data") %>%
   kable_styling()
+```
+
+### Graphical summaries {.tabset}
+
+```{r, include=FALSE}
+# Color palette for treatment arms
+trt_colors <- c("control" = "#4E79A7", "experimental" = "#E15759")
+
+# Helper: Kaplan-Meier plot with HR, 95% CI, logrank p-value, and at-risk table
+km_plot <- function(data, title, stratified = FALSE) {
+  data$event <- 1L - data$CNSR
+  fit <- survfit(Surv(AVAL, event) ~ TRT, data = data)
+
+  # HR and 95% CI from Cox model
+  if (stratified) {
+    cox_fit <- coxph(Surv(AVAL, event) ~ TRT + strata(STRATUM), data = data)
+  } else {
+    cox_fit <- coxph(Surv(AVAL, event) ~ TRT, data = data)
+  }
+  hr <- exp(coef(cox_fit))
+  ci <- exp(confint(cox_fit))
+
+  # Logrank p-value
+  pval <- logrank_pval(data, stratified = stratified)
+
+  # Build annotation
+  hr_text <- sprintf(
+    "HR = %.3f (95%% CI: %.3f, %.3f)\n1-sided logrank p = %.4f",
+    hr, ci[1], ci[2], pval
+  )
+
+  # Convert survfit to data frame for ggplot
+  sdf <- data.frame(
+    time = fit$time,
+    surv = fit$surv,
+    upper = fit$upper,
+    lower = fit$lower,
+    strata = rep(names(fit$strata), fit$strata)
+  )
+  sdf$TRT <- gsub("TRT=", "", sdf$strata)
+
+  # X-axis breaks every 6 months
+  max_time <- max(sdf$time)
+  x_breaks <- seq(0, ceiling(max_time / 6) * 6, by = 6)
+
+  # At-risk table: number at risk at each x_break
+  trt_levels <- c("control", "experimental")
+  at_risk <- expand.grid(time = x_breaks, TRT = trt_levels,
+                         stringsAsFactors = FALSE)
+  at_risk$n_risk <- mapply(function(t, arm) {
+    d_arm <- data[data$TRT == arm, ]
+    sum(d_arm$AVAL >= t)
+  }, at_risk$time, at_risk$TRT)
+
+  # Main KM plot
+  p_km <- ggplot(sdf, aes(x = time, y = surv, color = TRT)) +
+    geom_step(linewidth = 0.8) +
+    scale_color_manual(values = trt_colors, name = "Treatment") +
+    scale_x_continuous(breaks = x_breaks, limits = c(0, max(x_breaks))) +
+    scale_y_continuous(labels = scales::percent,
+                       breaks = seq(0, 1, by = 0.2), limits = c(0, 1)) +
+    labs(title = title, x = NULL, y = "Survival probability") +
+    annotate("text", x = max(x_breaks) * 0.98, y = 0.95,
+             label = hr_text, hjust = 1, vjust = 1, size = 3.2) +
+    theme_bw() +
+    theme(
+      legend.position = "bottom",
+      panel.grid.minor = element_blank(),
+      plot.margin = margin(5.5, 5.5, 0, 5.5)
+    )
+
+  # At-risk table as a plot
+  p_risk <- ggplot(at_risk, aes(x = time, y = TRT, label = n_risk, color = TRT)) +
+    geom_text(size = 3) +
+    scale_color_manual(values = trt_colors, guide = "none") +
+    scale_x_continuous(breaks = x_breaks, limits = c(0, max(x_breaks))) +
+    scale_y_discrete(limits = rev(trt_levels)) +
+    labs(x = "Time (months)", y = NULL) +
+    theme_bw() +
+    theme(
+      panel.grid = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks.y = element_blank(),
+      plot.margin = margin(0, 5.5, 5.5, 5.5)
+    )
+
+  # Stack KM plot and at-risk table
+  gridExtra::grid.arrange(p_km, p_risk, ncol = 1, heights = c(4, 1))
+}
+
+# Helper: ORR bar chart for all populations
+orr_plot <- function(data_bm_pos, data_all, data_bm_neg) {
+
+  get_rates <- function(d, pop_label) {
+    resp_ctrl <- sum(d$AVAL[d$TRT == "control"])
+    n_ctrl <- sum(d$TRT == "control")
+    resp_exp <- sum(d$AVAL[d$TRT == "experimental"])
+    n_exp <- sum(d$TRT == "experimental")
+    tibble(
+      Population = pop_label,
+      Treatment = c("control", "experimental"),
+      Responses = c(resp_ctrl, resp_exp),
+      N = c(n_ctrl, n_exp),
+      Rate = c(resp_ctrl / n_ctrl, resp_exp / n_exp)
+    )
+  }
+
+  rates <- bind_rows(
+    get_rates(data_bm_pos, "BM+"),
+    get_rates(data_all, "Overall"),
+    get_rates(data_bm_neg, "BM-")
+  )
+  rates$Population <- factor(rates$Population, levels = c("BM+", "Overall", "BM-"))
+
+  # Compute risk differences and p-values per population
+  rd_stats <- rates %>%
+    group_by(Population) %>%
+    summarise(
+      rd = Rate[Treatment == "experimental"] - Rate[Treatment == "control"],
+      rate_exp = Rate[Treatment == "experimental"],
+      rate_ctrl = Rate[Treatment == "control"],
+      .groups = "drop"
+    )
+
+  pval_bm_pos <- rd_pval(data_bm_pos, stratified = FALSE)
+  pval_overall <- rd_pval(data_all, stratified = TRUE)
+  pval_bm_neg <- rd_pval(data_bm_neg, stratified = FALSE)
+  rd_stats$pval <- c(pval_bm_pos, pval_overall, pval_bm_neg)
+
+  rd_stats$label <- sprintf(
+    "RD = %.1f%%\n1-sided p = %.4f",
+    rd_stats$rd * 100, rd_stats$pval
+  )
+
+  ggplot(rates, aes(x = Population, y = Rate, fill = Treatment)) +
+    geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+    geom_text(
+      aes(label = sprintf("%.1f%%", Rate * 100)),
+      position = position_dodge(width = 0.7),
+      vjust = -0.5, size = 3
+    ) +
+    geom_text(
+      data = rd_stats,
+      aes(x = Population, y = pmax(rate_exp, rate_ctrl) + 0.08,
+          label = label, fill = NULL),
+      size = 3, lineheight = 0.9
+    ) +
+    scale_fill_manual(values = trt_colors, name = "Treatment") +
+    scale_y_continuous(labels = scales::percent, limits = c(0, 1),
+                       expand = expansion(mult = c(0, 0.05))) +
+    labs(title = "Objective Response Rate by Population",
+         x = NULL, y = "Response rate") +
+    theme_bw() +
+    theme(legend.position = "bottom")
+}
+```
+
+#### ORR (Analysis 1)
+
+```{r, fig.asp=0.7}
+d1 <- adtte[[1]]
+orr_plot(
+  data_bm_pos = d1 %>% filter(PARAMCD == "ORR", STRATUM == "BM+"),
+  data_all = d1 %>% filter(PARAMCD == "ORR"),
+  data_bm_neg = d1 %>% filter(PARAMCD == "ORR", STRATUM == "BM-")
+)
+```
+
+```{r, include=FALSE}
+# Pre-compute all KM plot objects
+# Ordering: Analysis first, then Endpoint, then Population
+endpoints <- c("OS", "PFS")
+populations <- list(
+  "BM+" = list(filter_expr = "BM+", stratified = FALSE),
+  "Overall (stratified)" = list(filter_expr = NULL, stratified = TRUE),
+  "BM-" = list(filter_expr = "BM-", stratified = FALSE)
+)
+
+km_plots <- list()
+for (ai in 1:3) {
+  for (ep in endpoints) {
+    n_analyses <- if (ep == "OS") 3 else 2
+    if (ai > n_analyses) next
+    for (pop_name in names(populations)) {
+      pop <- populations[[pop_name]]
+      d <- adtte[[ai]]
+      d_ep <- d %>% filter(PARAMCD == ep)
+      if (!is.null(pop$filter_expr)) {
+        d_ep <- d_ep %>% filter(STRATUM == pop$filter_expr)
+      }
+      title <- sprintf("%s \u2014 Analysis %d \u2014 %s (N = %d, events = %d)",
+                        ep, ai, pop_name, nrow(d_ep), sum(d_ep$CNSR == 0))
+      key <- sprintf("A%d_%s_%s", ai, ep, gsub(" ", "_", pop_name))
+      km_plots[[key]] <- km_plot(d_ep, title, stratified = pop$stratified)
+    }
+  }
+}
+```
+
+```{r, results='asis', fig.asp=0.85}
+# Generate tabs: Analysis 1 first, then 2, then 3
+for (ai in 1:3) {
+  for (ep in endpoints) {
+    n_analyses <- if (ep == "OS") 3 else 2
+    if (ai > n_analyses) next
+    for (pop_name in names(populations)) {
+      key <- sprintf("A%d_%s_%s", ai, ep, gsub(" ", "_", pop_name))
+      cat(" \n")
+      cat(sprintf("#### %s A%d %s \n\n", ep, ai, pop_name))
+      print(km_plots[[key]])
+      cat(" \n\n\n")
+    }
+  }
+}
 ```
 
 ## Testing hypotheses
@@ -896,6 +1141,274 @@ for (i in 1:nHypotheses) {
 ```{r}
 options(old)
 ```
+
+## Weighted parametric group sequential design (wpgsd)
+
+The analysis above uses the Bonferroni-based shortcut (via `graphicalMCP::graph_test_shortcut()`)
+which ignores correlations between test statistics.
+The [wpgsd](https://merck.github.io/wpgsd/) package (Anderson et al., 2022)
+accounts for two sources of correlation:
+
+1. **Group sequential correlation** — between interim and final analyses of the same hypothesis,
+   driven by the information fraction.
+2. **Population-induced correlation** — between subgroup (BM+) and overall population tests for the
+   same endpoint, because BM+ patients are a subset of the overall population.
+
+We apply wpgsd separately for OS (H1, H2; 3 analyses) and PFS (H3, H4; 2 analyses).
+
+```{r, message=FALSE}
+library(wpgsd)
+```
+
+### Correlation matrices
+
+The correlation between test statistics arises from two sources:
+
+- **Group sequential**: $\text{corr}(Z_{H_i,A_s}, Z_{H_i,A_t}) = \sqrt{d_{i,\min(s,t)} / d_{i,\max(s,t)}}$
+  where $d_{i,k}$ is the event count for hypothesis $i$ at analysis $k$.
+- **Nested populations**: $\text{corr}(Z_{H_{\text{sub}},A_s}, Z_{H_{\text{all}},A_t}) = d_{\text{sub},\min(s,t)} / \sqrt{d_{\text{sub},s} \cdot d_{\text{all},t}}$
+  since the intersection of BM+ and Overall events equals the BM+ event count.
+
+We construct the event-count matrix $D$ where $D_{ij}$ contains the number of events shared
+between test statistics $i$ and $j$, then convert to correlation via
+$\text{corr} = B \, D \, B$ where $B = \text{diag}(1/\sqrt{d_{ii}})$.
+
+For PFS (2 analyses), we use `wpgsd::generate_corr()` directly.
+For OS (3 analyses), we construct the correlation matrix manually.
+
+```{r}
+# PFS: use generate_corr (works correctly for k = 2)
+event_pfs <- tibble::tribble(
+  ~H1, ~H2, ~Analysis, ~Event,
+  # Analysis 1
+  1, 1, 1, events_pfs_sub[1],
+  2, 2, 1, events_pfs_all[1],
+  1, 2, 1, events_pfs_sub[1],
+  # Analysis 2
+  1, 1, 2, events_pfs_sub[2],
+  2, 2, 2, events_pfs_all[2],
+  1, 2, 2, events_pfs_sub[2]
+)
+
+corr_pfs <- generate_corr(event_pfs)
+```
+
+```{r}
+# OS: build 6x6 correlation matrix manually (2 hypotheses x 3 analyses)
+# Ordering: H1_A1, H2_A1, H1_A2, H2_A2, H1_A3, H2_A3
+d_os <- c(
+  events_os_sub[1], events_os_all[1],
+  events_os_sub[2], events_os_all[2],
+  events_os_sub[3], events_os_all[3]
+)
+D_os <- diag(d_os)
+
+# Within-hypothesis across-analysis: events at min(s,t)
+# H1 (BM+) at positions 1, 3, 5
+D_os[1, 3] <- D_os[3, 1] <- events_os_sub[1]  # A1<->A2
+D_os[1, 5] <- D_os[5, 1] <- events_os_sub[1]  # A1<->A3
+D_os[3, 5] <- D_os[5, 3] <- events_os_sub[2]  # A2<->A3
+# H2 (Overall) at positions 2, 4, 6
+D_os[2, 4] <- D_os[4, 2] <- events_os_all[1]
+D_os[2, 6] <- D_os[6, 2] <- events_os_all[1]
+D_os[4, 6] <- D_os[6, 4] <- events_os_all[2]
+
+# Cross-hypothesis: intersection at min(s,t) = BM+ events at min(s,t)
+# Same analysis
+D_os[1, 2] <- D_os[2, 1] <- events_os_sub[1]
+D_os[3, 4] <- D_os[4, 3] <- events_os_sub[2]
+D_os[5, 6] <- D_os[6, 5] <- events_os_sub[3]
+# Cross-analysis
+D_os[1, 4] <- D_os[4, 1] <- events_os_sub[1]  # H1_A1<->H2_A2
+D_os[1, 6] <- D_os[6, 1] <- events_os_sub[1]  # H1_A1<->H2_A3
+D_os[2, 3] <- D_os[3, 2] <- events_os_sub[1]  # H2_A1<->H1_A2
+D_os[2, 5] <- D_os[5, 2] <- events_os_sub[1]  # H2_A1<->H1_A3
+D_os[3, 6] <- D_os[6, 3] <- events_os_sub[2]  # H1_A2<->H2_A3
+D_os[4, 5] <- D_os[5, 4] <- events_os_sub[2]  # H2_A2<->H1_A3
+
+B_os <- diag(1 / sqrt(diag(D_os)))
+corr_os <- B_os %*% D_os %*% B_os
+colnames(corr_os) <- paste0(
+  rep(c("H1", "H2"), 3), "_A", rep(1:3, each = 2)
+)
+```
+
+The OS correlation matrix is $6 \times 6$ (2 hypotheses $\times$ 3 analyses)
+and the PFS correlation matrix is $4 \times 4$ (2 hypotheses $\times$ 2 analyses).
+Off-diagonal blocks capture the population-induced correlation from the nested BM+ $\subset$ Overall structure.
+
+```{r}
+cat("OS correlation matrix (H1: BM+, H2: Overall; Analyses 1-3):\n")
+round(corr_os, 3)
+
+cat("\nPFS correlation matrix (H3: BM+, H4: Overall; Analyses 1-2):\n")
+round(corr_pfs, 3)
+```
+
+### WPGSD bounds vs Bonferroni bounds {.tabset}
+
+We compare bounds from the weighted parametric approach (which uses the correlation) to
+standard Bonferroni bounds (which ignore it). For each endpoint, we use a 2-hypothesis
+sub-graph with full reallocation between BM+ and Overall, and Lan-DeMets O'Brien-Fleming
+spending (`sfLDOF`).
+
+```{r}
+# Sub-graph for 2 hypotheses: full reallocation
+m_sub <- matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
+
+# --- OS ---
+# Weights proportional to initial alpha for H1, H2
+w_os <- alphaHypotheses[1:2] / sum(alphaHypotheses[1:2])
+
+# Information fractions (spending time) for OS
+t_os_sub <- events_os_sub / max(events_os_sub)
+t_os_all <- events_os_all / max(events_os_all)
+
+# Bonferroni bounds (type = 0)
+bound_os_bonf <- generate_bounds(
+  type = 0, k = 3, w = w_os, m = m_sub, corr = corr_os,
+  alpha = sum(alphaHypotheses[1:2]),
+  sf = list(gsDesign::sfLDOF, gsDesign::sfLDOF),
+  sfparm = list(0, 0),
+  t = list(t_os_sub, t_os_sub)
+)
+
+# WPGSD bounds (type = 3: separate alpha spending with parametric adjustment)
+bound_os_wpgsd <- generate_bounds(
+  type = 3, k = 3, w = w_os, m = m_sub, corr = corr_os,
+  alpha = sum(alphaHypotheses[1:2]),
+  sf = list(gsDesign::sfLDOF, gsDesign::sfLDOF),
+  sfparm = list(0, 0),
+  t = list(t_os_sub, t_os_sub)
+)
+```
+
+```{r}
+# --- PFS ---
+# Use equal weights for the PFS sub-graph (both hypotheses get positive alpha)
+# The actual alpha allocation from the full graph is handled separately
+w_pfs <- c(0.5, 0.5)
+
+t_pfs_sub <- events_pfs_sub / max(events_pfs_sub)
+t_pfs_all <- events_pfs_all / max(events_pfs_all)
+
+# Bonferroni bounds
+bound_pfs_bonf <- generate_bounds(
+  type = 0, k = 2, w = w_pfs, m = m_sub, corr = corr_pfs,
+  alpha = sum(alphaHypotheses[3:4]),
+  sf = list(gsDesign::sfLDOF, gsDesign::sfLDOF),
+  sfparm = list(0, 0),
+  t = list(t_pfs_sub, t_pfs_sub)
+)
+
+# WPGSD bounds
+bound_pfs_wpgsd <- generate_bounds(
+  type = 3, k = 2, w = w_pfs, m = m_sub, corr = corr_pfs,
+  alpha = sum(alphaHypotheses[3:4]),
+  sf = list(gsDesign::sfLDOF, gsDesign::sfLDOF),
+  sfparm = list(0, 0),
+  t = list(t_pfs_sub, t_pfs_sub)
+)
+```
+
+#### OS bounds comparison
+
+```{r}
+# Combine Bonferroni and WPGSD bounds for OS
+bounds_os <- dplyr::left_join(
+  bound_os_bonf, bound_os_wpgsd,
+  by = c("Hypotheses", "Analysis"),
+  suffix = c(".Bonf", ".WPGSD")
+)
+
+# Convert to Z-scale for easier interpretation
+bounds_os <- bounds_os %>%
+  dplyr::mutate(
+    `Z H1 Bonf` = round(-qnorm(H1.Bonf), 3),
+    `Z H2 Bonf` = round(-qnorm(H2.Bonf), 3),
+    `Z H1 WPGSD` = round(-qnorm(H1.WPGSD), 3),
+    `Z H2 WPGSD` = round(-qnorm(H2.WPGSD), 3)
+  )
+
+bounds_os %>%
+  dplyr::select(Analysis, Hypotheses,
+                `Z H1 Bonf`, `Z H1 WPGSD`,
+                `Z H2 Bonf`, `Z H2 WPGSD`) %>%
+  kable(caption = "OS bounds: Bonferroni vs WPGSD (Z-scale, lower = less conservative)") %>%
+  kable_styling()
+```
+
+#### PFS bounds comparison
+
+```{r}
+bounds_pfs <- dplyr::left_join(
+  bound_pfs_bonf, bound_pfs_wpgsd,
+  by = c("Hypotheses", "Analysis"),
+  suffix = c(".Bonf", ".WPGSD")
+)
+
+bounds_pfs <- bounds_pfs %>%
+  dplyr::mutate(
+    `Z H3 Bonf` = round(-qnorm(H1.Bonf), 3),
+    `Z H4 Bonf` = round(-qnorm(H2.Bonf), 3),
+    `Z H3 WPGSD` = round(-qnorm(H1.WPGSD), 3),
+    `Z H4 WPGSD` = round(-qnorm(H2.WPGSD), 3)
+  )
+
+bounds_pfs %>%
+  dplyr::select(Analysis, Hypotheses,
+                `Z H3 Bonf`, `Z H3 WPGSD`,
+                `Z H4 Bonf`, `Z H4 WPGSD`) %>%
+  kable(caption = "PFS bounds: Bonferroni vs WPGSD (Z-scale, lower = less conservative)") %>%
+  kable_styling()
+```
+
+### Closed testing with WPGSD bounds
+
+We use `closed_test()` to formally test the observed nominal p-values against the WPGSD bounds.
+
+```{r}
+# Observed p-values for OS (H1, H2) at each analysis
+p_obs_os <- tibble::tibble(
+  Analysis = 1:3,
+  H1 = c(pvals$H1_1, pvals$H1_2, pvals$H1_3),
+  H2 = c(pvals$H2_1, pvals$H2_2, pvals$H2_3)
+)
+
+# Observed p-values for PFS (H3, H4) at analyses 1-2
+p_obs_pfs <- tibble::tibble(
+  Analysis = 1:2,
+  H1 = c(pvals$H3_1, pvals$H3_2),
+  H2 = c(pvals$H4_1, pvals$H4_2)
+)
+
+cat("Observed nominal p-values for OS:\n")
+kable(p_obs_os, digits = 6) %>% kable_styling()
+```
+
+```{r}
+cat("Observed nominal p-values for PFS:\n")
+kable(p_obs_pfs, digits = 6) %>% kable_styling()
+```
+
+```{r}
+# Closed testing for OS
+ct_os <- closed_test(bound_os_wpgsd, p_obs_os)
+kable(ct_os, caption = "WPGSD closed testing results for OS (H1: BM+, H2: Overall)") %>%
+  kable_styling()
+```
+
+```{r}
+# Closed testing for PFS
+ct_pfs <- closed_test(bound_pfs_wpgsd, p_obs_pfs)
+kable(ct_pfs, caption = "WPGSD closed testing results for PFS (H1: BM+, H2: Overall)") %>%
+  kable_styling()
+```
+
+The WPGSD approach provides less conservative bounds than the Bonferroni-based approach by
+exploiting the known correlation between BM+ and Overall population test statistics.
+The Z-boundary tables above show the WPGSD bounds are consistently lower (less conservative)
+than the Bonferroni bounds, particularly for the intersection hypotheses.
 
 ## Session information
 
