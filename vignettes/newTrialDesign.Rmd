@@ -77,6 +77,8 @@ library(ggplot2)
 library(gsDesign)
 library(gsDesign2)
 library(graphicalMCP)
+library(simtrial)
+library(survival)
 
 if (!"sequential_pval" %in% getNamespaceExports("gsDesign2")) {
   stop(
@@ -404,29 +406,276 @@ Analysis timing relative to final patient enrolled (FPE):
 - **IA2 (FPE + 14 months)**: Final PFS analysis, requires targeted BM+ PFS events (max extension to FPE + 17 months). Interim OS.
 - **Final (FPE + 24 months)**: Final OS analysis, requires targeted BM+ OS events (max extension to FPE + 30 months).
 
-## Results entry at time of analysis
+## Simulated trial data
 
-### Timing of analyses and resulting event counts
+We simulate a single trial instance using an illness-death model with response.
+The model has four states: alive without response or progression (0),
+responded without progression (1), progressed (2), and dead (3).
+Piecewise exponential distributions drive all state transitions.
 
-```{r}
-### MODIFY EVENT COUNTS TO MATCH YOUR STUDY
-# PFS, overall population
-events_pfs_all <- c(675, 750)
-# PFS, BM+
-events_pfs_sub <- c(265, 310)
-# OS, overall population
-events_os_all <- c(529, 700, 800)
-# OS, BM+
-events_os_sub <- c(185, 245, 295)
+```{r illness-death-diagram, fig.asp=0.8, fig.width=6, out.width="70%"}
+# --- Illness-death model diagram ---
+par(mar = c(0, 0, 0, 0))
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1))
+
+# State positions (diamond layout)
+sx <- c(0.50, 0.12, 0.88, 0.50)  # State 0, 1, 2, 3
+sy <- c(0.88, 0.50, 0.50, 0.12)
+r <- 0.10  # circle radius in user coords
+
+# Draw state circles
+theta <- seq(0, 2 * pi, length.out = 100)
+state_colors <- c("#56B4E9", "#009E73", "#E69F00", "#999999")
+state_labels <- c(
+  "Alive\nNo response\nNo progression",
+  "Responded\nNo progression",
+  "Progressed",
+  "Dead"
+)
+
+for (i in 1:4) {
+  polygon(sx[i] + r * cos(theta), sy[i] + r * 0.9 * sin(theta),
+          col = adjustcolor(state_colors[i], alpha.f = 0.3),
+          border = state_colors[i], lwd = 2)
+  text(sx[i], sy[i], state_labels[i], cex = 0.7, font = 2)
+}
+
+# Arrow helper: draw from edge of circle i to edge of circle j
+draw_trans <- function(i, j, label_expr, label_pos = 0.5,
+                       label_offset = c(0, 0), curve = 0, ...) {
+  dx <- sx[j] - sx[i]
+  dy <- sy[j] - sy[i]
+  ang <- atan2(dy, dx)
+
+  # Start and end at circle edge
+  x0 <- sx[i] + r * cos(ang)
+  y0 <- sy[i] + r * 0.9 * sin(ang)
+  x1 <- sx[j] - r * cos(ang)
+  y1 <- sy[j] - r * 0.9 * sin(ang)
+
+  if (curve == 0) {
+    arrows(x0, y0, x1, y1, length = 0.10, lwd = 2, ...)
+    lx <- x0 + label_pos * (x1 - x0) + label_offset[1]
+    ly <- y0 + label_pos * (y1 - y0) + label_offset[2]
+  } else {
+    # Curved arrow using xspline
+    mx <- (x0 + x1) / 2 + curve * (y1 - y0)
+    my <- (y0 + y1) / 2 - curve * (x1 - x0)
+    xspline(c(x0, mx, x1), c(y0, my, y1), shape = c(0, 1, 0),
+            border = "black", lwd = 2, ...)
+    # Arrowhead at end
+    ang2 <- atan2(y1 - my, x1 - mx)
+    arrows(x1 - 0.01 * cos(ang2), y1 - 0.01 * sin(ang2),
+           x1, y1, length = 0.10, lwd = 2, ...)
+    lx <- mx + label_offset[1]
+    ly <- my + label_offset[2]
+  }
+  text(lx, ly, label_expr, cex = 0.85)
+}
+
+# Transitions
+draw_trans(1, 2, expression(lambda[resp]), label_pos = 0.45, label_offset = c(-0.06, 0.04))
+draw_trans(1, 3, expression(lambda["prog,0"]), label_pos = 0.45, label_offset = c(0.06, 0.04))
+draw_trans(1, 4, expression(lambda["death,0"]), label_pos = 0.5, label_offset = c(0.08, 0))
+draw_trans(2, 3, expression(lambda["prog,1"]), label_pos = 0.5, label_offset = c(0, 0.06))
+draw_trans(2, 4, expression(lambda["death,1"]), label_pos = 0.45, label_offset = c(-0.06, -0.04))
+draw_trans(3, 4, expression(lambda["death,2"]), label_pos = 0.45, label_offset = c(0.06, -0.04))
 ```
 
-### Nominal p-values for each analysis
+```{r, message=FALSE}
+source(file.path(rprojroot::find_root("DESCRIPTION"), "sim_illness_death.R"))
+source(file.path(rprojroot::find_root("DESCRIPTION"), "cut_illness_death.R"))
+```
 
-Enter nominal 1-sided p-values for each analysis. For analyses not yet performed, use dummy values (e.g., 0.99).
+### Transition rates
+
+Transition rates are calibrated from the design assumptions. Control arm medians
+are matched numerically; experimental arm rates are derived by scaling with
+the specified HRs and solving for the target ORR.
+
+```{r}
+transition_rate <- build_transition_rates(
+  strata = c("BM+", "BM-"),
+  treatments = c("control", "experimental"),
+  median_pfs = c("BM+" = pfsmedian, "BM-" = pfsmedian),
+  median_os = c("BM+" = osmedian, "BM-" = osmedian),
+  orr = list(
+    "BM+" = c(control = orr_ctrl_bm_pos, experimental = orr_exp_bm_pos),
+    "BM-" = c(control = orr_ctrl_bm_neg, experimental = orr_exp_bm_neg)
+  ),
+  hr_pfs = c("BM+" = 0.70, "BM-" = 0.90),
+  hr_os = c("BM+" = 0.65, "BM-" = 0.85)
+)
+
+kable(transition_rate, digits = 4, caption = "Illness-death transition rates") %>%
+  kable_styling()
+```
+
+### Simulate one trial
+
+```{r}
+set.seed(20250313)
+n_per_arm <- ceiling(n_bm_pos + n_bm_neg)
+n_sim <- n_per_arm * 2
+steady_rate <- n_sim / 11  # 14-month enrollment: 0.25*2 + 0.5*2 + 0.75*2 + 1*8 = 11 rate-months
+
+sim_data <- sim_illness_death(
+  n = n_sim,
+  stratum = data.frame(stratum = c("BM+", "BM-"), p = c(bm_prev, 1 - bm_prev)),
+  block = c("control", "control", "experimental", "experimental"),
+  enroll_rate = data.frame(
+    rate = steady_rate * c(0.25, 0.50, 0.75, 1.00),
+    duration = c(2, 2, 2, 8)
+  ),
+  transition_rate = transition_rate,
+  dropout_rate = 0.001
+)
+
+fpe <- max(sim_data$ENRLTIME)
+cat("Total N:", nrow(sim_data), "\n")
+cat("N BM+:", sum(sim_data$STRATUM == "BM+"),
+    "N BM-:", sum(sim_data$STRATUM == "BM-"), "\n")
+cat("FPE:", round(fpe, 1), "months\n")
+```
+
+### Determine analysis cut dates
+
+```{r}
+# Extract target event counts from designs
+target_pfs_events_sub <- ceiling(max(pfssub$analysis$event))
+target_os_events_sub <- ceiling(max(ossub$analysis$event))
+
+analyses <- list(
+  list(min_followup = 6, endpoint = NULL, event_target = NULL,
+       target_stratum = NULL, max_followup = NULL),
+  list(min_followup = 14, endpoint = "PFS", event_target = target_pfs_events_sub,
+       target_stratum = "BM+", max_followup = 17),
+  list(min_followup = 24, endpoint = "OS", event_target = target_os_events_sub,
+       target_stratum = "BM+", max_followup = 30)
+)
+
+cut_dates <- get_analysis_dates(sim_data, analyses)
+
+cat("Analysis cut dates:\n")
+for (i in seq_along(cut_dates)) {
+  cat(sprintf("  Analysis %d: %.1f months (FPE + %.1f)\n",
+              i, cut_dates[i], cut_dates[i] - fpe))
+}
+```
+
+### Cut data and compute event counts
+
+```{r}
+adtte <- lapply(seq_along(cut_dates), function(i) {
+  d <- cut_illness_death(sim_data, cut_dates[i])
+  d$ANALYSIS <- i
+  d
+})
+names(adtte) <- paste0("IA", seq_along(cut_dates))
+
+# Event counts per analysis
+event_summary <- do.call(rbind, lapply(seq_along(adtte), function(i) {
+  adtte[[i]] %>%
+    filter(PARAMCD %in% c("OS", "PFS")) %>%
+    group_by(PARAMCD, STRATUM) %>%
+    summarise(events = sum(CNSR == 0), .groups = "drop") %>%
+    mutate(Analysis = i)
+}))
+
+kable(event_summary %>% tidyr::pivot_wider(
+  names_from = Analysis, values_from = events, names_prefix = "Analysis "
+), caption = "Event counts by analysis") %>%
+  kable_styling()
+```
+
+### Compute nominal p-values {.tabset}
+
+One-sided p-values from Cox regression (OS, PFS) and rate difference test (ORR).
+
+```{r}
+# Helper: 1-sided p-value from Cox model (H1: HR < 1)
+cox_pval <- function(data, stratified = FALSE) {
+  data$event <- 1L - data$CNSR
+  data$trt01 <- as.integer(data$TRT == "experimental")
+  if (stratified) {
+    fit <- coxph(Surv(AVAL, event) ~ trt01 + strata(STRATUM), data = data)
+  } else {
+    fit <- coxph(Surv(AVAL, event) ~ trt01, data = data)
+  }
+  z <- coef(fit) / sqrt(vcov(fit)[1, 1])
+  pnorm(z)  # 1-sided: P(HR < 1)
+}
+
+# Helper: 1-sided p-value for rate difference (H1: p_exp > p_ctrl)
+rd_pval <- function(data) {
+  n_exp <- sum(data$TRT == "experimental")
+  n_ctrl <- sum(data$TRT == "control")
+  resp_exp <- sum(data$AVAL[data$TRT == "experimental"])
+  resp_ctrl <- sum(data$AVAL[data$TRT == "control"])
+  p_exp <- resp_exp / n_exp
+  p_ctrl <- resp_ctrl / n_ctrl
+  p_pool <- (resp_exp + resp_ctrl) / (n_exp + n_ctrl)
+  se <- sqrt(p_pool * (1 - p_pool) * (1 / n_exp + 1 / n_ctrl))
+  if (se == 0) return(0.5)
+  z <- (p_exp - p_ctrl) / se
+  pnorm(-z)  # 1-sided: small when experimental is better
+}
+```
+
+```{r}
+# Compute p-values for each hypothesis at each analysis
+pvals <- list()
+
+for (i in seq_along(cut_dates)) {
+  d <- adtte[[i]]
+
+  # H1: OS BM+ (analyses 1-3)
+  pvals[[paste0("H1_", i)]] <- cox_pval(d %>% filter(PARAMCD == "OS", STRATUM == "BM+"))
+
+  # H2: OS Overall (analyses 1-3)
+  pvals[[paste0("H2_", i)]] <- cox_pval(d %>% filter(PARAMCD == "OS"), stratified = TRUE)
+
+  # H3: PFS BM+ (analyses 1-2)
+  if (i <= 2) {
+    pvals[[paste0("H3_", i)]] <- cox_pval(d %>% filter(PARAMCD == "PFS", STRATUM == "BM+"))
+  }
+
+  # H4: PFS Overall (analyses 1-2)
+  if (i <= 2) {
+    pvals[[paste0("H4_", i)]] <- cox_pval(d %>% filter(PARAMCD == "PFS"), stratified = TRUE)
+  }
+
+  # H5: ORR BM+ (analysis 1 only)
+  if (i == 1) {
+    pvals[[paste0("H5_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR", STRATUM == "BM+"))
+  }
+
+  # H6: ORR Overall (analysis 1 only)
+  if (i == 1) {
+    pvals[[paste0("H6_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR"))
+  }
+}
+```
+
+### Build results table
+
+Assemble event counts and p-values into the format required for sequential testing.
 Spending time uses the BM+ information fraction for all hypotheses.
 
 ```{r, warnings=FALSE, message=FALSE}
-### MODIFY P-VALUES TO MATCH YOUR STUDY
+# Extract event counts from ADTTE
+get_events <- function(analysis_idx, paramcd, stratum = NULL) {
+  d <- adtte[[analysis_idx]]
+  if (!is.null(stratum)) d <- d %>% filter(STRATUM == stratum)
+  sum(d$PARAMCD == paramcd & d$CNSR == 0, na.rm = TRUE)
+}
+
+events_os_sub <- sapply(1:3, function(i) get_events(i, "OS", "BM+"))
+events_os_all <- sapply(1:3, function(i) get_events(i, "OS"))
+events_pfs_sub <- sapply(1:2, function(i) get_events(i, "PFS", "BM+"))
+events_pfs_all <- sapply(1:2, function(i) get_events(i, "PFS"))
+
 inputResults <- tibble(
   H = c(rep(1, 3), rep(2, 3), rep(3, 2), rep(4, 2), 5, 6),
   Pop = c(
@@ -436,12 +685,12 @@ inputResults <- tibble(
   ),
   Endpoint = c(rep("OS", 6), rep("PFS", 4), rep("ORR", 2)),
   nominalP = c(
-    .03, .0001, .000001,
-    .2, .15, .1,
-    .2, .001,
-    .3, .2,
-    .00001,
-    .1
+    pvals$H1_1, pvals$H1_2, pvals$H1_3,
+    pvals$H2_1, pvals$H2_2, pvals$H2_3,
+    pvals$H3_1, pvals$H3_2,
+    pvals$H4_1, pvals$H4_2,
+    pvals$H5_1,
+    pvals$H6_1
   ),
   Analysis = c(1:3, 1:3, 1:2, 1:2, 1, 1),
   events = c(events_os_sub, events_os_all, events_pfs_sub, events_pfs_all, NA, NA),
@@ -453,9 +702,8 @@ inputResults <- tibble(
     NA, NA
   )
 )
-kable(inputResults, caption = "DUMMY RESULTS — replace with actual data.") %>%
-  kable_styling() %>%
-  add_footnote("Dummy results", notation = "none")
+kable(inputResults, caption = "Results from simulated trial data") %>%
+  kable_styling()
 ```
 
 ## Testing hypotheses
