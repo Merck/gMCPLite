@@ -1,0 +1,683 @@
+---
+title: "New Trial Design: Group sequential design using graphicalMCP and gsDesign2"
+output:
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 2
+bibliography: gMCPLite.bib
+vignette: >
+  %\VignetteIndexEntry{New Trial Design: Group sequential design using graphicalMCP and gsDesign2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>",
+  dev = "ragg_png",
+  dpi = 96,
+  fig.retina = 1,
+  fig.width = 7.2916667,
+  fig.asp = 0.618,
+  fig.align = "center",
+  out.width = "80%"
+)
+```
+
+## Overview
+
+This document evaluates statistical significance for graphical multiplicity control with group sequential design following the Maurer-Bretz (2013) framework. The combination of graphicalMCP and gsDesign2 packages is used for design and analysis.
+
+The trial tests 3 endpoints across 2 populations, yielding 6 hypotheses:
+
+| Hypothesis | Endpoint | Population | Analyses |
+|------------|----------|------------|----------|
+| H1 | OS | BM+ | 3 |
+| H2 | OS | Overall | 3 |
+| H3 | PFS | BM+ | 2 |
+| H4 | PFS | Overall | 2 |
+| H5 | ORR | BM+ | 1 |
+| H6 | ORR | Overall | 1 |
+
+Key design features:
+
+- Enrollment over 14 months with a 6-month ramp-up.
+- BM+ prevalence assumed at 60%.
+
+### Analysis timing rules
+
+All timing is relative to final patient enrolled (FPE). Enrollment is planned over 14 months.
+
+| Analysis | Timing rule (after FPE) | Max extension | Endpoints assessed |
+|----------|------------------------|---------------|-------------------|
+| IA1 | 6 months after FPE | None | ORR (final for both populations), PFS and OS (interim) |
+| IA2 | 14 months after FPE AND targeted PFS event count in BM+ reached | Up to 17 months after FPE (+3 months) | PFS (final for both populations), OS (interim) |
+| Final | 24 months after FPE AND targeted OS event count in BM+ reached | Up to 30 months after FPE (+6 months) | OS (final for both populations) |
+
+Notes on timing rules:
+
+- IA1 is calendar-driven to ensure 6 months minimum follow-up for ORR assessment in all patients. PFS and OS are analyzed with whatever event counts are available at the cutoff.
+- IA2 is both calendar- and event-driven: we require at least 14 months after FPE to ensure minimum follow-up of nearly 3x the assumed control median PFS, but also require the targeted BM+ PFS event count. If the targeted events are not reached by 14 months after FPE, the analysis may be delayed up to 3 months.
+- The final analysis is event-driven for OS in BM+. If the targeted event count is not reached by 24 months after FPE, the analysis may be delayed up to 6 months (30 months after FPE).
+
+## Design
+
+```{r, message=FALSE, warning=FALSE}
+### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
+old <- options(scipen = 999)
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+library(dplyr)
+library(tibble)
+library(knitr)
+library(kableExtra)
+library(gt)
+library(ggplot2)
+library(gsDesign)
+library(gsDesign2)
+library(graphicalMCP)
+
+if (!"sequential_pval" %in% getNamespaceExports("gsDesign2")) {
+  stop(
+    "This vignette requires a version of gsDesign2 that exports `sequential_pval()`.\n",
+    "Install the GitHub version from `Merck/gsDesign2`."
+  )
+}
+```
+
+### Multiplicity diagram for hypothesis testing
+
+Alpha is split equally between BM+ and Overall populations for OS, with smaller allocations to PFS and ORR. Reallocation flows from BM+ to Overall within each endpoint, and from Overall to the next endpoint's populations.
+
+```{r, warning=FALSE, message=FALSE, fig.asp=0.9}
+### MODIFY HYPOTHESES, ALPHA, AND TRANSITIONS FOR YOUR STUDY
+nameHypotheses <- c(
+  "H1: OS\n BM+",
+  "H2: OS\n Overall",
+  "H3: PFS\n BM+",
+  "H4: PFS\n Overall",
+  "H5: ORR\n BM+",
+  "H6: ORR\n Overall"
+)
+nHypotheses <- length(nameHypotheses)
+
+# Transition weights for alpha reallocation
+m <- matrix(c(
+  0, 1, 0, 0, 0, 0,
+  0, 0, .5, .5, 0, 0,
+  0, 0, 0, 1, 0, 0,
+  0, 0, 0, 0, .5, .5,
+  0, 0, 0, 0, 0, 1,
+  .5, .5, 0, 0, 0, 0
+), nrow = 6, byrow = TRUE)
+
+# Initial Type I error assigned to each hypothesis (one-sided)
+alphaHypotheses <- c(.01, .01, .004, 0.000, 0.0005, .0005)
+fwer <- sum(alphaHypotheses)
+
+fill_idx <- c(2, 2, 4, 4, 3, 3)
+vertex_color_map <- stats::setNames(cbPalette[fill_idx], nameHypotheses)
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = stats::setNames(alphaHypotheses / fwer, nameHypotheses),
+  transitions = m,
+  hyp_names = nameHypotheses
+)
+
+layout6 <- rbind(
+  c(0.28, 0.74),
+  c(0.72, 0.74),
+  c(0.18, 0.50),
+  c(0.82, 0.50),
+  c(0.28, 0.26),
+  c(0.72, 0.26)
+)
+
+# Build vertex labels with alpha character
+alphaLabels <- sprintf("\u03b1 = %s", format(alphaHypotheses, scientific = FALSE))
+vertexLabels <- paste(nameHypotheses, alphaLabels, sep = "\n")
+
+plot(g0,
+  layout = layout6,
+  vertex.size = 45,
+  vertex.label = vertexLabels,
+  vertex.label.cex = 0.9,
+  vertex.color = unname(vertex_color_map[names(g0$hypotheses)]),
+  margin = 0.25
+)
+```
+
+### Common design parameters
+
+BM+ prevalence is 60%. Enrollment occurs over 14 months with a 6-month ramp-up.
+
+```{r}
+### MODIFY THESE PARAMETERS FOR YOUR STUDY
+bm_prev <- 0.60
+osmedian <- 12  # Control median OS (months)
+pfsmedian <- 5  # Control median PFS (months)
+```
+
+### Group sequential designs for each hypothesis {.tabset}
+
+H1 (OS in BM+) is the sample-size-driving hypothesis, designed with `gs_design_ahr()` targeting 90% power.
+All other hypotheses use the enrollment rates derived from H1 and compute power with `gs_power_ahr()` (time-to-event) or `fixed_design_rd()` (ORR).
+
+#### H1: OS, BM+ (sample-size-driving)
+
+BM+ subgroup only. Control median OS = `r osmedian` months, HR = 0.65. Target 90% power.
+This design determines the BM+ enrollment rate and sample size for all other hypotheses.
+
+```{r}
+fail_rate_os_sub <- gsDesign2::define_fail_rate(
+  duration = Inf,
+  fail_rate = log(2) / osmedian,
+  hr = 0.65,
+  dropout_rate = 0.001
+)
+
+# Initial BM+ enrollment rate for design (will be updated by gs_design_ahr)
+enroll_rate_sub_init <- gsDesign2::define_enroll_rate(
+  duration = c(2, 2, 2, 8),
+  rate = c(0.25, 0.50, 0.75, 1.00)  # Relative rates; gs_design_ahr will scale
+)
+
+ossub <- gsDesign2::gs_design_ahr(
+  enroll_rate = enroll_rate_sub_init,
+  fail_rate = fail_rate_os_sub,
+  alpha = alphaHypotheses[1],
+  beta = 0.1,
+  binding = FALSE,
+  analysis_time = c(20, 28, 38),  # FPE+6, FPE+14, FPE+24 (14 mo enrollment + follow-up)
+  info_frac = NULL,                # Derived from analysis_time + enroll/fail rates
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = alphaHypotheses[1]),
+  test_lower = FALSE
+)
+
+gsDesign2::gs_bound_summary(ossub) %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Design for OS in BM+ (gsDesign2)")
+```
+
+#### Derive enrollment rates and sample sizes from H1
+
+The BM+ enrollment rate from H1 determines all other designs.
+The BM- enrollment rate is derived from the BM+ prevalence.
+
+```{r}
+# Extract BM+ enrollment rate from H1 design
+enroll_rate_sub <- ossub$enroll_rate
+n_bm_pos <- sum(enroll_rate_sub$rate * enroll_rate_sub$duration)
+n_bm_neg <- n_bm_pos * (1 - bm_prev) / bm_prev
+n_total <- n_bm_pos + n_bm_neg
+
+cat("BM+ sample size (per arm):", round(n_bm_pos), "\n")
+cat("BM- sample size (per arm):", round(n_bm_neg), "\n")
+cat("Total sample size (per arm):", round(n_total), "\n")
+
+# Build stratified enrollment rate for overall population designs
+enroll_rate_overall <- gsDesign2::define_enroll_rate(
+  stratum = rep(c("BM+", "BM-"), each = nrow(enroll_rate_sub)),
+  duration = rep(enroll_rate_sub$duration, 2),
+  rate = c(
+    enroll_rate_sub$rate,                                    # BM+ rates from H1
+    enroll_rate_sub$rate * (1 - bm_prev) / bm_prev          # BM- rates scaled by prevalence
+  )
+)
+```
+
+#### H2: OS, Overall
+
+Stratified power calculation using enrollment from H1.
+
+- BM+ (60%): Control median OS = `r osmedian` months, HR = 0.65.
+- BM- (40%): Control median OS = `r osmedian` months, HR = 0.85.
+
+```{r}
+fail_rate_os_overall <- gsDesign2::define_fail_rate(
+  stratum = c("BM+", "BM-"),
+  duration = c(Inf, Inf),
+  fail_rate = log(2) / osmedian,
+  hr = c(0.65, 0.85),
+  dropout_rate = 0.001
+)
+
+os <- gsDesign2::gs_power_ahr(
+  enroll_rate = enroll_rate_overall,
+  fail_rate = fail_rate_os_overall,
+  ratio = 1,
+  event = NULL,
+  analysis_time = c(20, 28, 38),  # FPE+6, FPE+14, FPE+24
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = alphaHypotheses[2]),
+  test_lower = FALSE,
+  binding = FALSE
+)
+
+gsDesign2::gs_bound_summary(os) %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Power for OS in Overall population (gsDesign2)")
+```
+
+#### H3: PFS, BM+
+
+Power calculation for BM+ subgroup using enrollment from H1. Control median PFS = `r pfsmedian` months, HR = 0.70.
+
+```{r}
+fail_rate_pfs_sub <- gsDesign2::define_fail_rate(
+  duration = Inf,
+  fail_rate = log(2) / pfsmedian,
+  hr = 0.70,
+  dropout_rate = 0.001
+)
+
+pfssub <- gsDesign2::gs_power_ahr(
+  enroll_rate = enroll_rate_sub,
+  fail_rate = fail_rate_pfs_sub,
+  ratio = 1,
+  event = NULL,
+  analysis_time = c(20, 28),  # FPE+6, FPE+14
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = alphaHypotheses[3]),
+  test_lower = FALSE,
+  binding = FALSE
+)
+
+gsDesign2::gs_bound_summary(pfssub) %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Power for PFS in BM+ (gsDesign2)")
+```
+
+#### H4: PFS, Overall
+
+Stratified power calculation using enrollment from H1.
+
+- BM+ (60%): Control median PFS = `r pfsmedian` months, HR = 0.70.
+- BM- (40%): Control median PFS = `r pfsmedian` months, HR = 0.90.
+
+```{r}
+fail_rate_pfs_overall <- gsDesign2::define_fail_rate(
+  stratum = c("BM+", "BM-"),
+  duration = c(Inf, Inf),
+  fail_rate = log(2) / pfsmedian,
+  hr = c(0.70, 0.90),
+  dropout_rate = 0.001
+)
+
+# H4 starts with alpha = 0 but may receive alpha through reallocation.
+# Use PFS BM+ alpha for bounds structure; actual testing uses reallocated alpha.
+pfs <- gsDesign2::gs_power_ahr(
+  enroll_rate = enroll_rate_overall,
+  fail_rate = fail_rate_pfs_overall,
+  ratio = 1,
+  event = NULL,
+  analysis_time = c(20, 28),  # FPE+6, FPE+14
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF, total_spend = alphaHypotheses[3]),  # Use H3's alpha for bounds
+  test_lower = FALSE,
+  binding = FALSE
+)
+
+gsDesign2::gs_bound_summary(pfs) %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Power for PFS in Overall population (gsDesign2)")
+```
+
+#### H5: ORR, BM+
+
+Fixed design for rate difference in BM+ subgroup. Control ORR = 30%, experimental ORR = 45%.
+
+```{r}
+orr_ctrl_bm_pos <- 0.30
+orr_exp_bm_pos <- 0.45
+
+orr_sub <- gsDesign2::fixed_design_rd(
+  alpha = alphaHypotheses[5],
+  power = NULL,
+  p_c = orr_ctrl_bm_pos,
+  p_e = orr_exp_bm_pos,
+  rd0 = 0,
+  n = ceiling(n_bm_pos) * 2  # Total N (both arms) in BM+
+)
+
+summary(orr_sub) %>%
+  gt::gt() %>%
+  gt::fmt_number(columns = "Bound", decimals = 2) %>%
+  gt::fmt_number(columns = "Power", decimals = 3) %>%
+  gt::tab_header(title = "Power for ORR in BM+ (fixed_design_rd)")
+```
+
+#### H6: ORR, Overall
+
+Fixed design for rate difference in overall population, stratified by biomarker status.
+
+- BM+ (60%): Control ORR = 30%, experimental ORR = 45%.
+- BM- (40%): Control ORR = 20%, experimental ORR = 24%.
+
+```{r}
+orr_ctrl_bm_neg <- 0.20
+orr_exp_bm_neg <- 0.24
+
+orr_ctrl_overall <- orr_ctrl_bm_pos * bm_prev + orr_ctrl_bm_neg * (1 - bm_prev)
+orr_exp_overall <- orr_exp_bm_pos * bm_prev + orr_exp_bm_neg * (1 - bm_prev)
+
+orr_all <- gsDesign2::fixed_design_rd(
+  alpha = alphaHypotheses[6],
+  power = NULL,
+  p_c = orr_ctrl_overall,
+  p_e = orr_exp_overall,
+  rd0 = 0,
+  n = ceiling(n_total) * 2  # Total N (both arms) overall
+)
+
+summary(orr_all) %>%
+  gt::gt() %>%
+  gt::fmt_number(columns = "Bound", decimals = 2) %>%
+  gt::fmt_number(columns = "Power", decimals = 3) %>%
+  gt::tab_header(title = "Power for ORR in Overall population (fixed_design_rd)")
+```
+
+### Design list
+
+```{r}
+gsD2list <- list(ossub, os, pfssub, pfs, NULL, NULL)
+```
+
+### Enrollment and analysis timing
+
+Enrollment occurs over 14 months with a 6-month ramp-up:
+
+- Months 1-2: 25% of steady-state rate
+- Months 3-4: 50% of steady-state rate
+- Months 5-6: 75% of steady-state rate
+- Months 7-14: Full steady-state enrollment
+
+Analysis timing relative to final patient enrolled (FPE):
+
+- **IA1 (FPE + 6 months)**: ORR assessed for all patients. Interim PFS and OS.
+- **IA2 (FPE + 14 months)**: Final PFS analysis, requires targeted BM+ PFS events (max extension to FPE + 17 months). Interim OS.
+- **Final (FPE + 24 months)**: Final OS analysis, requires targeted BM+ OS events (max extension to FPE + 30 months).
+
+## Results entry at time of analysis
+
+### Timing of analyses and resulting event counts
+
+```{r}
+### MODIFY EVENT COUNTS TO MATCH YOUR STUDY
+# PFS, overall population
+events_pfs_all <- c(675, 750)
+# PFS, BM+
+events_pfs_sub <- c(265, 310)
+# OS, overall population
+events_os_all <- c(529, 700, 800)
+# OS, BM+
+events_os_sub <- c(185, 245, 295)
+```
+
+### Nominal p-values for each analysis
+
+Enter nominal 1-sided p-values for each analysis. For analyses not yet performed, use dummy values (e.g., 0.99).
+Spending time uses the BM+ information fraction for all hypotheses.
+
+```{r, warnings=FALSE, message=FALSE}
+### MODIFY P-VALUES TO MATCH YOUR STUDY
+inputResults <- tibble(
+  H = c(rep(1, 3), rep(2, 3), rep(3, 2), rep(4, 2), 5, 6),
+  Pop = c(
+    rep("BM+", 3), rep("Overall", 3),
+    rep("BM+", 2), rep("Overall", 2),
+    "BM+", "Overall"
+  ),
+  Endpoint = c(rep("OS", 6), rep("PFS", 4), rep("ORR", 2)),
+  nominalP = c(
+    .03, .0001, .000001,
+    .2, .15, .1,
+    .2, .001,
+    .3, .2,
+    .00001,
+    .1
+  ),
+  Analysis = c(1:3, 1:3, 1:2, 1:2, 1, 1),
+  events = c(events_os_sub, events_os_all, events_pfs_sub, events_pfs_all, NA, NA),
+  spendingTime = c(
+    events_os_sub / max(events_os_sub),
+    events_os_sub / max(events_os_sub),
+    events_pfs_sub / max(events_pfs_sub),
+    events_pfs_sub / max(events_pfs_sub),
+    NA, NA
+  )
+)
+kable(inputResults, caption = "DUMMY RESULTS — replace with actual data.") %>%
+  kable_styling() %>%
+  add_footnote("Dummy results", notation = "none")
+```
+
+## Testing hypotheses
+
+### Compute sequential p-values for each hypothesis
+
+```{r, message=FALSE}
+### USER SHOULD NOT NEED TO MODIFY THIS CODE
+EOCtab <- NULL
+EOCtab <- inputResults %>%
+  group_by(H) %>%
+  slice(1) %>%
+  ungroup() %>%
+  select("H", "Pop", "Endpoint", "nominalP")
+EOCtab$seqp <- .9999
+for (EOCtabline in 1:nHypotheses) {
+  EOCtab$seqp[EOCtabline] <-
+    ifelse(is.null(gsD2list[[EOCtabline]]), EOCtab$nominalP[EOCtabline], {
+      tem <- filter(inputResults, H == EOCtabline)
+      gsDesign2::sequential_pval(
+        gs_design = gsD2list[[EOCtabline]],
+        event = tem$events,
+        z = -stats::qnorm(tem$nominalP),
+        ustime = tem$spendingTime,
+        interval = c(1e-05, 0.9999)
+      )
+    })
+}
+EOCtab <- EOCtab %>% select(-"nominalP")
+```
+
+### Evaluate hypothesis rejection using graphicalMCP
+
+```{r, message=FALSE, warning=FALSE}
+library(graphicalMCP)
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = alphaHypotheses / fwer,
+  transitions = m,
+  hyp_names = nameHypotheses
+)
+```
+
+```{r}
+result <- graphicalMCP::graph_test_shortcut(
+  graph = g0,
+  p = EOCtab$seqp,
+  alpha = fwer,
+  verbose = TRUE
+)
+
+adj_p <- result$outputs$adjusted_p
+rej <- result$outputs$rejected
+
+if (is.numeric(rej)) {
+  rej_logical <- rep(FALSE, nHypotheses)
+  rej_logical[rej] <- TRUE
+} else {
+  rej_logical <- as.logical(rej)
+}
+
+EOCtab$Rejected <- rej_logical
+EOCtab$adjPValues <- adj_p
+```
+
+## Verification of hypotheses rejected
+
+```{r}
+rejected_order <- which(EOCtab$Rejected)[order(EOCtab$adjPValues[EOCtab$Rejected])]
+
+graphs <- list(g0)
+if (length(rejected_order) > 0) {
+  gu <- graphicalMCP::graph_update(g0, delete = rejected_order)
+  graphs <- gu$intermediate_graphs
+}
+ngraphs <- length(graphs)
+
+lastWeights <- as.numeric(graphs[[ngraphs]]$hypotheses)
+lastGraph <- rep(ngraphs, nrow(EOCtab))
+
+if (length(rejected_order) > 0) {
+  for (j in seq_along(rejected_order)) {
+    h <- rejected_order[j]
+    lastWeights[h] <- as.numeric(graphs[[j]]$hypotheses[h])
+    lastGraph[h] <- j
+  }
+}
+
+EOCtab$lastAlpha <- fwer * lastWeights
+EOCtab$lastGraph <- lastGraph
+EOCtabx <- EOCtab
+names(EOCtabx) <- c(
+  "Hypothesis", "Population", "Endpoint", "Sequential p",
+  "Rejected", "Adjusted p", "Max alpha allocated", "Last Graph"
+)
+```
+
+### Multiplicity graph sequence from graphicalMCP {.tabset}
+
+```{r, message=FALSE, warning=FALSE, results='asis', fig.asp=0.95}
+### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
+for (i in 1:ngraphs) {
+  cat(" \n")
+  cat("####", paste(" Graph", as.character(i), " \n\n"))
+  gi_alpha <- fwer * as.numeric(graphs[[i]]$hypotheses)
+  gi_labels <- paste(
+    names(graphs[[i]]$hypotheses),
+    sprintf("\u03b1 = %s", format(gi_alpha, scientific = FALSE)),
+    sep = "\n"
+  )
+  plot(graphs[[i]],
+    layout = layout6,
+    vertex.size = 45,
+    vertex.label = gi_labels,
+    vertex.label.cex = 0.9,
+    vertex.color = unname(vertex_color_map[names(graphs[[i]]$hypotheses)]),
+    margin = 0.25
+  )
+  cat(" \n\n\n")
+}
+```
+
+### Comparison of sequential p-values to multiplicity graphs
+
+```{r}
+EOCtabx %>%
+  select(c(1:4, 7, 5:6, 8)) %>%
+  kable() %>%
+  kable_styling()
+```
+
+### Bounds at final alpha allocated for group sequential tests {.tabset}
+
+```{r, results='asis'}
+for (i in 1:nHypotheses) {
+  cat("####", paste(" Hypothesis", as.character(i), " \n"))
+  hresults <- inputResults %>% filter(H == i)
+  xx <- paste("Max alpha allocated from above table: ",
+    as.character(EOCtab$lastAlpha[i]),
+    sep = ""
+  )
+  d2 <- gsD2list[[i]]
+  if (is.null(d2)) {
+    cat("Maximum alpha allocated: ")
+    cat(EOCtab$lastAlpha[i])
+    cat("\n\n")
+    cat("Nominal p-value for hypothesis test: ")
+    cat(hresults$nominalP)
+    cat("\n\n")
+  }
+  if (!is.null(gsD2list[[i]])) {
+    cat("Nominal p-values at each analysis for comparison to bounds in table below:\n\n")
+    cat(hresults$nominalP)
+    cat("\n\n")
+    n.I <- hresults$events
+    usTime <- hresults$spendingTime
+    if (EOCtab$lastAlpha[i] == 0) {
+      cat("Maximum alpha allocated: 0\n\n")
+      cat("No testing required\n\n")
+    }
+    if (EOCtab$lastAlpha[i] > 0) {
+      d2_upd <- gsDesign2::gs_update_ahr(
+        x = d2,
+        alpha = EOCtab$lastAlpha[i],
+        ustime = usTime,
+        event_tbl = data.frame(analysis = hresults$Analysis, event = n.I)
+      )
+
+      d2_upd$bound %>%
+        dplyr::filter(.data$bound == "upper") %>%
+        dplyr::left_join(
+          data.frame(analysis = hresults$Analysis, spending_time = usTime),
+          by = "analysis"
+        ) %>%
+        dplyr::transmute(
+          Analysis = .data$analysis,
+          Z = .data$z,
+          `Nominal p (1-sided)` = .data$`nominal p`,
+          `Spending time` = .data$spending_time
+        ) %>%
+        kable(caption = xx, row.names = FALSE) %>%
+        kable_styling() %>%
+        cat()
+      cat("\n\n")
+    }
+  }
+}
+```
+
+```{r}
+options(old)
+```
+
+## Session information
+
+You can use `sessionInfo()` to document the versions of R and R packages used to render this document.
+
+## References
+
+```{js, echo=FALSE}
+// Fix dynamic tabsets code block rendering issue under pkgdown
+(function () {
+  unstyledCode = document.querySelectorAll("button code");
+  if (!unstyledCode.length) {
+    return;
+  }
+  for (let i = 0; i < unstyledCode.length; i++) {
+    blockOld = unstyledCode[i].outerHTML;
+    blockNew =
+      "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" +
+      blockOld +
+      "</pre>";
+    unstyledCode[i].outerHTML = blockNew;
+  }
+  var tabElements = [
+    "ul#multiplicity-graph-sequence-from-graphicalmcp li:nth-child(2) button",
+    "ul#bounds-at-final-alpha-allocated-for-group-sequential-tests li:nth-child(2) button",
+  ];
+  for (let i = 0; i < tabElements.length; i++) {
+    var el = document.querySelector(tabElements[i]);
+    var tab = new bootstrap.Tab(el);
+    tab.show();
+  }
+})();
+```
