@@ -484,8 +484,8 @@ draw_trans(3, 4, expression(lambda["death,2"]), label_pos = 0.45, label_offset =
 ```
 
 ```{r, message=FALSE}
-source(file.path(rprojroot::find_root("DESCRIPTION"), "sim_illness_death.R"))
-source(file.path(rprojroot::find_root("DESCRIPTION"), "cut_illness_death.R"))
+source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "sim_illness_death.R"))
+source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "cut_illness_death.R"))
 ```
 
 ### Transition rates
