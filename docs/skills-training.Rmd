@@ -159,17 +159,40 @@ Total FWER = $\sum \alpha_i$ = 0.025 (one-sided)
 
 ## The Multiplicity Graph
 
-```r
-g0 <- graphicalMCP::graph_create(
-  hypotheses = alphaHypotheses / fwer,
-  transitions = m,
-  hyp_names = nameHypotheses
+```{r multiplicity-graph, eval=TRUE, echo=FALSE, fig.asp=0.85, fig.width=7, out.width="75%", fig.align="center"}
+nameHypotheses <- c(
+  "H1: OS\n BM+", "H2: OS\n Overall",
+  "H3: PFS\n BM+", "H4: PFS\n Overall",
+  "H5: ORR\n BM+", "H6: ORR\n Overall"
 )
-```
+m <- matrix(c(
+  0, 1, 0, 0, 0, 0,
+  0, 0, .5, .5, 0, 0,
+  0, 0, 0, 1, 0, 0,
+  0, 0, 0, 0, .5, .5,
+  0, 0, 0, 0, 0, 1,
+  .5, .5, 0, 0, 0, 0
+), nrow = 6, byrow = TRUE)
+alphaHypotheses <- c(.01, .01, .004, 0.000, 0.0005, .0005)
+fwer <- sum(alphaHypotheses)
 
-- **Vertices** = hypotheses with initial $\alpha$ weights
-- **Edges** = transition weights (where $\alpha$ goes when a hypothesis is rejected)
-- Plotted with $\alpha = x.xxxx$ labels on each vertex
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
+               "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+fill_idx <- c(2, 2, 4, 4, 3, 3)
+vertex_colors <- cbPalette[fill_idx]
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = stats::setNames(alphaHypotheses / fwer, nameHypotheses),
+  transitions = m, hyp_names = nameHypotheses
+)
+layout6 <- rbind(c(0.28, 0.74), c(0.72, 0.74), c(0.18, 0.50),
+                 c(0.82, 0.50), c(0.28, 0.26), c(0.72, 0.26))
+alphaLabels <- sprintf("\u03b1 = %s", format(alphaHypotheses, scientific = FALSE))
+vertexLabels <- paste(nameHypotheses, alphaLabels, sep = "\n")
+
+plot(g0, layout = layout6, vertex.size = 45, vertex.label = vertexLabels,
+     vertex.label.cex = 0.9, vertex.color = vertex_colors, margin = 0.25)
+```
 
 # Part 3: Design Specification
 
