@@ -137,6 +137,7 @@ graphicalMCPgsd2/
         ├── Hypothesis testing
         ├── Verification with updated bounds
         ├── P-value computation (logrank, RD)
+        ├── Theoretical survival curves
         ├── Kaplan-Meier plots
         └── WPGSD analysis
 ```
@@ -334,6 +335,30 @@ draw_trans(2, 3, expression(lambda["prog,1"]), label_pos = 0.5, label_offset = c
 draw_trans(2, 4, expression(lambda["death,1"]), label_pos = 0.45, label_offset = c(-0.06, -0.04))
 draw_trans(3, 4, expression(lambda["death,2"]), label_pos = 0.45, label_offset = c(0.06, -0.04))
 ```
+
+## Theoretical Survival Curves {.smaller}
+
+From the illness-death model parameters, compute **marginal PFS and OS** analytically (no simulation needed):
+
+```r
+get_theoretical_surv <- function(transition_rate,
+                                  stratum_val, trt_val, t_grid) {
+  # Extract rates, compute marginal CDF via .pfs_cdf() / .os_cdf()
+  pfs_surv <- 1 - sapply(t_grid, function(t)
+    .pfs_cdf(t, lambda_0, orr_param, lambda_1))
+  os_surv  <- 1 - sapply(t_grid, function(t)
+    .os_cdf(t, lambda_0, orr_param, lambda_1, ...))
+}
+```
+
+**2×2 layout**: Top row shows by-stratum curves (BM+ solid, BM- dashed); bottom row shows the overall population (weighted: 60% BM+ + 40% BM-).
+
+```r
+# Overall = prevalence-weighted mixture
+overall_surv <- bm_prev * surv_BM_pos + (1 - bm_prev) * surv_BM_neg
+```
+
+This validates design assumptions before any simulation.
 
 ## P-Value Computation
 

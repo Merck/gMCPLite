@@ -457,6 +457,83 @@ rd_pval <- function(data, stratified = FALSE) {
 }
 ```
 
+## Theoretical survival curves {#theoretical-curves}
+
+The illness-death model's internal CDF helpers (`.pfs_cdf()`, `.os_cdf()`) can compute
+marginal PFS and OS survival curves from the transition rates without simulation.
+Use this to visualize assumed treatment effects during the design phase.
+
+```r
+# Extract rates for a stratum/treatment from the transition_rate table
+get_theoretical_surv <- function(transition_rate, stratum_val, trt_val, t_grid) {
+  tr <- transition_rate[transition_rate$stratum == stratum_val &
+                          transition_rate$treatment == trt_val, ]
+  get_rate <- function(trans) tr$rate[tr$transition == trans]
+
+  lambda_resp <- get_rate("response")
+  lambda_prog0 <- get_rate("prog_0")
+  lambda_death0 <- get_rate("death_0")
+  lambda_prog1 <- get_rate("prog_1")
+  lambda_death1 <- get_rate("death_1")
+  lambda_death2 <- get_rate("death_2")
+
+  lambda_0 <- lambda_resp + lambda_prog0 + lambda_death0
+  orr_param <- lambda_resp / lambda_0
+  lambda_1 <- lambda_prog1 + lambda_death1
+
+  pfs_surv <- 1 - sapply(t_grid, function(t)
+    .pfs_cdf(t, lambda_0, orr_param, lambda_1))
+  os_surv <- 1 - sapply(t_grid, function(t)
+    .os_cdf(t, lambda_0, orr_param, lambda_1,
+            lambda_death0, lambda_prog0, lambda_death1,
+            lambda_prog1, lambda_death2))
+
+  tibble(time = rep(t_grid, 2), surv = c(pfs_surv, os_surv),
+         endpoint = rep(c("PFS", "OS"), each = length(t_grid)),
+         stratum = stratum_val, treatment = trt_val)
+}
+
+# Limit t_grid to trial duration (final analysis time)
+t_grid <- seq(0, 38, by = 0.25)
+
+# By-stratum curves (BM+ and BM-)
+stratum_curves <- bind_rows(
+  get_theoretical_surv(transition_rate, "BM+", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM+", "experimental", t_grid),
+  get_theoretical_surv(transition_rate, "BM-", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM-", "experimental", t_grid)
+) %>% mutate(population = "By stratum")
+
+# Overall population: prevalence-weighted mixture of BM+ and BM-
+bm_pos_curves <- bind_rows(
+  get_theoretical_surv(transition_rate, "BM+", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM+", "experimental", t_grid)
+)
+bm_neg_curves <- bind_rows(
+  get_theoretical_surv(transition_rate, "BM-", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM-", "experimental", t_grid)
+)
+overall_curves <- bm_pos_curves %>%
+  select(time, endpoint, treatment, surv_pos = surv) %>%
+  left_join(
+    bm_neg_curves %>% select(time, endpoint, treatment, surv_neg = surv),
+    by = c("time", "endpoint", "treatment")
+  ) %>%
+  mutate(surv = bm_prev * surv_pos + (1 - bm_prev) * surv_neg,
+         stratum = "Overall", population = "Overall") %>%
+  select(time, surv, endpoint, stratum, treatment, population)
+
+theor_curves <- bind_rows(stratum_curves, overall_curves)
+
+# 2x2 layout: facet_grid(population ~ endpoint)
+# Top row: by stratum (BM+ solid, BM- dashed)
+# Bottom row: overall population
+ggplot(theor_curves, aes(x = time, y = surv,
+                          color = treatment, linetype = stratum)) +
+  geom_line(linewidth = 0.8) +
+  facet_grid(population ~ endpoint)
+```
+
 ## Kaplan-Meier plots {#km-plots}
 
 KM plots should include:

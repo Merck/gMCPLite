@@ -68,6 +68,7 @@ Notes on timing rules:
 ### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
 old <- options(scipen = 999)
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+trt_colors <- c("control" = "#4E79A7", "experimental" = "#E15759")
 library(dplyr)
 library(tibble)
 library(knitr)
@@ -512,6 +513,121 @@ kable(transition_rate, digits = 4, caption = "Illness-death transition rates") %
   kable_styling()
 ```
 
+### Theoretical survival curves
+
+The illness-death model implies marginal PFS and OS distributions that are mixtures of
+exponential and convolution-of-exponential densities. We plot these theoretical curves
+to visualize the assumed treatment effects before simulating any data.
+
+```{r}
+# Compute theoretical survival for a given stratum and treatment
+get_theoretical_surv <- function(transition_rate, stratum_val, trt_val, t_grid) {
+  tr <- transition_rate[transition_rate$stratum == stratum_val &
+                          transition_rate$treatment == trt_val, ]
+  get_rate <- function(trans) tr$rate[tr$transition == trans]
+
+  lambda_resp <- get_rate("response")
+  lambda_prog0 <- get_rate("prog_0")
+  lambda_death0 <- get_rate("death_0")
+  lambda_prog1 <- get_rate("prog_1")
+  lambda_death1 <- get_rate("death_1")
+  lambda_death2 <- get_rate("death_2")
+
+  lambda_0 <- lambda_resp + lambda_prog0 + lambda_death0
+  orr_param <- lambda_resp / lambda_0
+  lambda_1 <- lambda_prog1 + lambda_death1
+
+  pfs_surv <- 1 - sapply(t_grid, function(t)
+    .pfs_cdf(t, lambda_0, orr_param, lambda_1))
+  os_surv <- 1 - sapply(t_grid, function(t)
+    .os_cdf(t, lambda_0, orr_param, lambda_1,
+            lambda_death0, lambda_prog0, lambda_death1,
+            lambda_prog1, lambda_death2))
+
+  tibble(
+    time = rep(t_grid, 2),
+    surv = c(pfs_surv, os_surv),
+    endpoint = rep(c("PFS", "OS"), each = length(t_grid)),
+    stratum = stratum_val,
+    treatment = trt_val
+  )
+}
+
+t_grid <- seq(0, 38, by = 0.25)  # Limit to trial duration (final analysis at 38 months)
+
+# By-stratum curves (BM+ and BM-)
+stratum_curves <- bind_rows(
+  get_theoretical_surv(transition_rate, "BM+", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM+", "experimental", t_grid),
+  get_theoretical_surv(transition_rate, "BM-", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM-", "experimental", t_grid)
+) %>% mutate(population = "By stratum")
+
+# Overall population: weighted average of BM+ and BM- survival
+bm_pos_curves <- bind_rows(
+  get_theoretical_surv(transition_rate, "BM+", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM+", "experimental", t_grid)
+)
+bm_neg_curves <- bind_rows(
+  get_theoretical_surv(transition_rate, "BM-", "control", t_grid),
+  get_theoretical_surv(transition_rate, "BM-", "experimental", t_grid)
+)
+overall_curves <- bm_pos_curves %>%
+  select(time, endpoint, treatment, surv_pos = surv) %>%
+  left_join(
+    bm_neg_curves %>% select(time, endpoint, treatment, surv_neg = surv),
+    by = c("time", "endpoint", "treatment")
+  ) %>%
+  mutate(
+    surv = bm_prev * surv_pos + (1 - bm_prev) * surv_neg,
+    stratum = "Overall",
+    population = "Overall"
+  ) %>%
+  select(time, surv, endpoint, stratum, treatment, population)
+
+theor_curves <- bind_rows(stratum_curves, overall_curves)
+```
+
+```{r, fig.width=10, fig.asp=1}
+theor_curves$endpoint <- factor(theor_curves$endpoint, levels = c("PFS", "OS"))
+theor_curves$population <- factor(theor_curves$population,
+                                   levels = c("By stratum", "Overall"))
+
+# Median labels: by stratum row shows BM+/BM- medians, overall row shows overall medians
+median_tbl <- theor_curves %>%
+  group_by(endpoint, population, stratum, treatment) %>%
+  summarise(median = time[which.min(abs(surv - 0.5))], .groups = "drop") %>%
+  mutate(label = sprintf("%s %s: %.1f mo", stratum, treatment, median))
+
+median_labels <- median_tbl %>%
+  group_by(endpoint, population) %>%
+  summarise(label = paste(label, collapse = "\n"), .groups = "drop")
+median_labels$endpoint <- factor(median_labels$endpoint, levels = c("PFS", "OS"))
+median_labels$population <- factor(median_labels$population,
+                                    levels = c("By stratum", "Overall"))
+
+ggplot(theor_curves, aes(x = time, y = surv,
+                          color = treatment, linetype = stratum)) +
+  geom_line(linewidth = 0.8) +
+  facet_grid(population ~ endpoint) +
+  scale_color_manual(values = trt_colors, name = "Treatment") +
+  scale_linetype_manual(values = c("BM+" = "solid", "BM-" = "dashed", "Overall" = "solid"),
+                        name = "Stratum") +
+  scale_x_continuous(breaks = seq(0, 36, by = 6)) +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = seq(0, 1, by = 0.2), limits = c(0, 1)) +
+  geom_text(data = median_labels,
+            aes(x = 20, y = 0.95, label = label),
+            inherit.aes = FALSE, hjust = 0, vjust = 1, size = 2.8,
+            lineheight = 0.9) +
+  labs(title = "Theoretical survival from illness-death model",
+       x = "Time (months)", y = "Survival probability") +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(face = "bold", size = 12))
+```
+
 ### Simulate one trial
 
 ```{r}
@@ -740,9 +856,6 @@ kable(inputResults, caption = "Results from simulated trial data") %>%
 ### Graphical summaries {.tabset}
 
 ```{r, include=FALSE}
-# Color palette for treatment arms
-trt_colors <- c("control" = "#4E79A7", "experimental" = "#E15759")
-
 # Helper: Kaplan-Meier plot with HR, 95% CI, logrank p-value, and at-risk table
 km_plot <- function(data, title, stratified = FALSE) {
   data$event <- 1L - data$CNSR
