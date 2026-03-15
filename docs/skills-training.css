@@ -1,0 +1,25 @@
+/* Custom styles for skills training slides */
+slides > slide {
+  overflow-y: auto;
+}
+
+pre {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.smaller pre {
+  font-size: 13px;
+}
+
+table {
+  font-size: 16px;
+}
+
+.smaller table {
+  font-size: 14px;
+}
+
+h2 {
+  font-size: 32px !important;
+}

@@ -1,0 +1,698 @@
+---
+title: "Claude Code Skills for Clinical Trial Design"
+subtitle: "Group Sequential Design with graphicalMCP + gsDesign2"
+author: "Training Workshop"
+date: "`r Sys.Date()`"
+output:
+  ioslides_presentation:
+    widescreen: true
+    css: skills-training.css
+    logo: logo.png
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, comment = "#>")
+# Enable eval for the illness-death diagram
+```
+
+## Agenda (40-45 min) {.smaller}
+
+| Time | Topic |
+|------|-------|
+| 5 min | What are Claude Code Skills? |
+| 5 min | The graphicalMCPgsd2 skill — overview |
+| 10 min | Live demo: design specification workflow |
+| 10 min | Live demo: simulated results and testing |
+| 5 min | Key pitfalls the skill prevents |
+| 5 min | Creating and customizing your own skills |
+| 5 min | Q&A |
+
+# Part 1: What Are Claude Code Skills?
+
+## Claude Code — Quick Refresher
+
+- **Claude Code** is Anthropic's CLI for AI-assisted software engineering
+- You interact with Claude in your terminal; it can read/write files, run code, search, etc.
+- Works in any language and framework — including R
+
+**The challenge**: Claude is a generalist. For specialized domains (like clinical trial design), it may not know your team's conventions, preferred packages, or subtle API pitfalls.
+
+## What Is a Skill?
+
+A **skill** is a structured knowledge package that teaches Claude how to perform a specific task well.
+
+Think of it as: **a domain expert's notes, organized for an AI assistant**
+
+```
+my-skill/
+├── SKILL.md          # Instructions + when to trigger
+└── references/       # Detailed code patterns, docs
+    └── code_patterns.md
+```
+
+## How Skills Work
+
+**Three-level loading system:**
+
+1. **Name + description** — always in context (~100 words)
+    - Claude reads this to decide: "Should I use this skill?"
+2. **SKILL.md body** — loaded when skill triggers (~500 lines)
+    - Workflow overview, key decisions, important caveats
+3. **Reference files** — loaded on demand (unlimited)
+    - Detailed code templates, API patterns, edge cases
+
+This keeps Claude's context focused while providing deep knowledge when needed.
+
+## When Does a Skill Trigger?
+
+The `description` field in SKILL.md frontmatter controls triggering:
+
+```yaml
+---
+name: graphicalMCPgsd2
+description: >
+  Guide users through group sequential design with
+  graphical multiplicity control using the graphicalMCP
+  and gsDesign2 R packages. Use this skill whenever
+  the user asks about: group sequential designs with
+  multiple hypotheses, sequential p-values, ...
+---
+```
+
+Claude matches user requests against these descriptions and loads the skill when relevant.
+
+## Skills vs. Prompt Engineering
+
+| | Ad-hoc prompting | Skills |
+|---|---|---|
+| **Persistence** | Lost each session | Saved permanently |
+| **Consistency** | Varies by prompt | Same patterns every time |
+| **Depth** | Limited by context | Progressive disclosure |
+| **Sharing** | Copy-paste | Install once, use everywhere |
+| **Validation** | Manual checking | Tested with benchmarks |
+
+Skills encode **institutional knowledge** so every team member gets the same expert guidance.
+
+# Part 2: The graphicalMCPgsd2 Skill
+
+## What This Skill Does
+
+Guides Claude through the **Maurer-Bretz (2013) framework** for clinical trials with:
+
+- Multiple endpoints (OS, PFS, ORR)
+- Multiple populations (BM+ subgroup, Overall)
+- Group sequential designs with interim analyses
+- Graphical multiplicity control for FWER
+
+**Packages**: `graphicalMCP`, `gsDesign2`, `wpgsd`
+
+## The Four-Phase Workflow {.smaller}
+
+The skill teaches Claude a structured workflow:
+
+| Phase | What happens | Key functions |
+|-------|-------------|---------------|
+| **1. Design** | Define hypotheses, build graph, size trial | `graph_create()`, `gs_design_ahr()`, `gs_power_ahr()` |
+| **2. Results** | Record events, nominal p-values, spending time | Data entry template |
+| **3. Testing** | Compute sequential p-values, test graph | `sequential_pval()`, `graph_test_shortcut()` |
+| **4. Verification** | Update bounds, confirm rejections | `gs_update_ahr()`, `graph_update()` |
+
+## Skill File Structure
+
+```
+graphicalMCPgsd2/
+├── SKILL.md
+│   ├── When to use this skill
+│   ├── Required packages
+│   ├── Workflow overview (4 phases)
+│   └── Important design considerations
+└── references/
+    └── code_patterns.md
+        ├── Multiplicity graph setup
+        ├── Sample-size-driving design
+        ├── Enrollment derivation
+        ├── Power for remaining hypotheses
+        ├── Results entry template
+        ├── Sequential p-values
+        ├── Hypothesis testing
+        ├── Verification with updated bounds
+        ├── P-value computation (logrank, RD)
+        ├── Theoretical survival curves
+        ├── Kaplan-Meier plots
+        └── WPGSD analysis
+```
+
+## The Example Trial Design {.smaller}
+
+6 hypotheses: 3 endpoints $\times$ 2 populations
+
+| Hypothesis | Endpoint | Population | Analyses | Initial $\alpha$ |
+|------------|----------|------------|----------|-----------------|
+| H1 | OS | BM+ | 3 | 0.0100 |
+| H2 | OS | Overall | 3 | 0.0100 |
+| H3 | PFS | BM+ | 2 | 0.0040 |
+| H4 | PFS | Overall | 2 | 0.0000 |
+| H5 | ORR | BM+ | 1 | 0.0005 |
+| H6 | ORR | Overall | 1 | 0.0005 |
+
+Total FWER = $\sum \alpha_i$ = 0.025 (one-sided)
+
+## The Multiplicity Graph
+
+```{r multiplicity-graph, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.asp=0.85, fig.width=7, out.width="75%", fig.align="center"}
+nameHypotheses <- c(
+  "H1: OS\n BM+", "H2: OS\n Overall",
+  "H3: PFS\n BM+", "H4: PFS\n Overall",
+  "H5: ORR\n BM+", "H6: ORR\n Overall"
+)
+m <- matrix(c(
+  0, 1, 0, 0, 0, 0,
+  0, 0, .5, .5, 0, 0,
+  0, 0, 0, 1, 0, 0,
+  0, 0, 0, 0, .5, .5,
+  0, 0, 0, 0, 0, 1,
+  .5, .5, 0, 0, 0, 0
+), nrow = 6, byrow = TRUE)
+alphaHypotheses <- c(.01, .01, .004, 0.000, 0.0005, .0005)
+fwer <- sum(alphaHypotheses)
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
+               "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+fill_idx <- c(2, 2, 4, 4, 3, 3)
+vertex_colors <- cbPalette[fill_idx]
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = stats::setNames(alphaHypotheses / fwer, nameHypotheses),
+  transitions = m, hyp_names = nameHypotheses
+)
+layout6 <- rbind(c(0.28, 0.74), c(0.72, 0.74), c(0.18, 0.50),
+                 c(0.82, 0.50), c(0.28, 0.26), c(0.72, 0.26))
+alphaLabels <- sprintf("\u03b1 = %s", format(alphaHypotheses, scientific = FALSE))
+vertexLabels <- paste(nameHypotheses, alphaLabels, sep = "\n")
+
+plot(g0, layout = layout6, vertex.size = 45, vertex.label = vertexLabels,
+     vertex.label.cex = 0.9, vertex.color = vertex_colors, margin = 0.25)
+```
+
+# Part 3: Design Specification
+
+## H1 Drives Sample Size
+
+One hypothesis drives the entire trial size — typically **OS in the subgroup (H1)**:
+
+```r
+ossub <- gsDesign2::gs_design_ahr(
+  enroll_rate = enroll_rate_sub_init,
+  fail_rate = fail_rate_os_sub,
+  alpha = alphaHypotheses[1],   # H1's alpha
+  beta = 0.1,                    # 90% power
+  analysis_time = c(20, 28, 38), # Calendar months
+  info_frac = NULL,              # Derived from timing
+  info_scale = "h0_info",
+  upper = gsDesign2::gs_spending_bound,
+  upar = list(sf = gsDesign::sfLDOF,
+              total_spend = alphaHypotheses[1]),
+  test_lower = FALSE
+)
+```
+
+## Key Design Pattern: `info_frac = NULL`
+
+**Without the skill**, Claude often passes `info_frac` directly:
+
+```r
+# WRONG — gs_power_ahr() doesn't accept info_frac
+gs_power_ahr(info_frac = c(0.5, 0.8, 1), ...)
+```
+
+**With the skill**, Claude knows to use `analysis_time` and let the information fraction be derived:
+
+```r
+# CORRECT — timing drives the information fraction
+gs_power_ahr(
+  analysis_time = c(20, 28, 38),
+  event = NULL,  # Must be NULL!
+  info_scale = "h0_info", ...
+)
+```
+
+## Deriving Enrollment from H1
+
+All other hypotheses derive their enrollment from H1:
+
+```r
+enroll_rate_sub <- ossub$enroll_rate
+n_sub <- sum(enroll_rate_sub$rate * enroll_rate_sub$duration)
+n_complement <- n_sub * (1 - prevalence) / prevalence
+
+# Stratified enrollment for Overall population
+enroll_rate_overall <- gsDesign2::define_enroll_rate(
+  stratum = rep(c("BM+", "BM-"),
+                each = nrow(enroll_rate_sub)),
+  duration = rep(enroll_rate_sub$duration, 2),
+  rate = c(enroll_rate_sub$rate,
+           enroll_rate_sub$rate *
+             (1 - prevalence) / prevalence)
+)
+```
+
+## Power for Remaining Hypotheses
+
+```r
+# Time-to-event: gs_power_ahr() (not gs_design_ahr!)
+pfssub <- gsDesign2::gs_power_ahr(
+  enroll_rate = enroll_rate_sub,
+  fail_rate = fail_rate_pfs_sub,
+  event = NULL,          # Let analysis_time drive it
+  analysis_time = c(20, 28), ...
+)
+
+# Binary (ORR): fixed_design_rd()
+orr_sub <- gsDesign2::fixed_design_rd(
+  alpha = alphaHypotheses[5],
+  power = NULL,          # Compute power
+  p_c = 0.30, p_e = 0.45,
+  n = ceiling(n_sub) * 2
+)
+```
+
+## Zero Initial Alpha Workaround
+
+H4 (PFS Overall) starts with $\alpha = 0$ — receives alpha only through reallocation.
+
+```r
+# This would ERROR — alpha = 0 breaks spending function
+gs_power_ahr(
+  upar = list(sf = gsDesign::sfLDOF,
+              total_spend = 0), ...  # Can't spend 0!
+)
+
+# The skill knows: use another hypothesis's alpha
+# for the bounds structure
+gs_power_ahr(
+  upar = list(sf = gsDesign::sfLDOF,
+              total_spend = alphaHypotheses[3]), ...
+)
+```
+
+The actual testing uses the reallocated alpha from the graph.
+
+# Part 4: Results and Testing
+
+## Illness-Death Simulation Model
+
+The vignette uses a **competing risks illness-death model** to simulate realistic trial data with piecewise exponential transitions via `simtrial::rpwexp()`, numerically calibrated to match marginal PFS/OS medians using `uniroot()`.
+
+```{r illness-death-slide, eval=TRUE, echo=FALSE, fig.asp=0.75, fig.width=6, out.width="65%", fig.align="center"}
+par(mar = c(0, 0, 0, 0))
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1))
+
+sx <- c(0.50, 0.12, 0.88, 0.50)
+sy <- c(0.88, 0.50, 0.50, 0.12)
+r <- 0.10
+
+theta <- seq(0, 2 * pi, length.out = 100)
+state_colors <- c("#56B4E9", "#009E73", "#E69F00", "#999999")
+state_labels <- c(
+  "Alive\nNo response\nNo progression",
+  "Responded\nNo progression",
+  "Progressed",
+  "Dead"
+)
+
+for (i in 1:4) {
+  polygon(sx[i] + r * cos(theta), sy[i] + r * 0.9 * sin(theta),
+          col = adjustcolor(state_colors[i], alpha.f = 0.3),
+          border = state_colors[i], lwd = 2)
+  text(sx[i], sy[i], state_labels[i], cex = 0.7, font = 2)
+}
+
+draw_trans <- function(i, j, label_expr, label_pos = 0.5,
+                       label_offset = c(0, 0), curve = 0, ...) {
+  dx <- sx[j] - sx[i]; dy <- sy[j] - sy[i]
+  ang <- atan2(dy, dx)
+  x0 <- sx[i] + r * cos(ang); y0 <- sy[i] + r * 0.9 * sin(ang)
+  x1 <- sx[j] - r * cos(ang); y1 <- sy[j] - r * 0.9 * sin(ang)
+  if (curve == 0) {
+    arrows(x0, y0, x1, y1, length = 0.10, lwd = 2, ...)
+    lx <- x0 + label_pos * (x1 - x0) + label_offset[1]
+    ly <- y0 + label_pos * (y1 - y0) + label_offset[2]
+  } else {
+    mx <- (x0 + x1) / 2 + curve * (y1 - y0)
+    my <- (y0 + y1) / 2 - curve * (x1 - x0)
+    xspline(c(x0, mx, x1), c(y0, my, y1), shape = c(0, 1, 0),
+            border = "black", lwd = 2, ...)
+    ang2 <- atan2(y1 - my, x1 - mx)
+    arrows(x1 - 0.01 * cos(ang2), y1 - 0.01 * sin(ang2),
+           x1, y1, length = 0.10, lwd = 2, ...)
+    lx <- mx + label_offset[1]; ly <- my + label_offset[2]
+  }
+  text(lx, ly, label_expr, cex = 0.85)
+}
+
+draw_trans(1, 2, expression(lambda[resp]), label_pos = 0.45, label_offset = c(-0.06, 0.04))
+draw_trans(1, 3, expression(lambda["prog,0"]), label_pos = 0.45, label_offset = c(0.06, 0.04))
+draw_trans(1, 4, expression(lambda["death,0"]), label_pos = 0.5, label_offset = c(0.08, 0))
+draw_trans(2, 3, expression(lambda["prog,1"]), label_pos = 0.5, label_offset = c(0, 0.06))
+draw_trans(2, 4, expression(lambda["death,1"]), label_pos = 0.45, label_offset = c(-0.06, -0.04))
+draw_trans(3, 4, expression(lambda["death,2"]), label_pos = 0.45, label_offset = c(0.06, -0.04))
+```
+
+## Theoretical Survival Curves {.smaller}
+
+From the illness-death model parameters, compute **marginal PFS and OS** analytically (no simulation needed):
+
+```r
+get_theoretical_surv <- function(transition_rate,
+                                  stratum_val, trt_val, t_grid) {
+  # Extract rates, compute marginal CDF via .pfs_cdf() / .os_cdf()
+  pfs_surv <- 1 - sapply(t_grid, function(t)
+    .pfs_cdf(t, lambda_0, orr_param, lambda_1))
+  os_surv  <- 1 - sapply(t_grid, function(t)
+    .os_cdf(t, lambda_0, orr_param, lambda_1, ...))
+}
+```
+
+**2×2 layout**: Top row shows by-stratum curves (BM+ solid, BM- dashed); bottom row shows the overall population (weighted: 60% BM+ + 40% BM-).
+
+```r
+# Overall = prevalence-weighted mixture
+overall_surv <- bm_prev * surv_BM_pos + (1 - bm_prev) * surv_BM_neg
+```
+
+This validates design assumptions before any simulation.
+
+## P-Value Computation
+
+### 1-sided logrank test (OS, PFS)
+
+```r
+logrank_pval <- function(data, stratified = FALSE) {
+  data$event <- 1L - data$CNSR
+  fit <- survdiff(Surv(AVAL, event) ~ TRT +
+    strata(STRATUM), data = data)
+  # CRITICAL: with strata, obs/exp are MATRICES
+  obs_ctrl <- if (is.matrix(fit$obs))
+    sum(fit$obs[1, ]) else fit$obs[1]
+  exp_ctrl <- if (is.matrix(fit$exp))
+    sum(fit$exp[1, ]) else fit$exp[1]
+  z_sign <- sign(obs_ctrl - exp_ctrl)
+  z <- z_sign * sqrt(fit$chisq)
+  pnorm(-z)
+}
+```
+
+## The `survdiff` Stratification Pitfall {.build}
+
+**Without the skill:**
+
+```r
+# BUG: fit$obs[1] gives first stratum only!
+z_sign <- sign(fit$obs[1] - fit$exp[1])
+# Gives WRONG p-values for stratified tests
+```
+
+**With the skill:**
+
+```r
+# CORRECT: sum across strata
+obs_ctrl <- if (is.matrix(fit$obs))
+  sum(fit$obs[1, ]) else fit$obs[1]
+```
+
+This bug produces p-values near 0.5 or 1.0 instead of the correct small p-values when treatment is effective. The skill documents this pitfall explicitly.
+
+## Stratified Risk Difference (ORR) {.smaller}
+
+For the Overall population, stratify by BM+/BM- with sample size weights:
+
+```r
+rd_pval <- function(data, stratified = TRUE) {
+  strata <- unique(data$STRATUM)
+  for (k in seq_along(strata)) {
+    # Compute per-stratum rate difference and variance
+    rd_s[k] <- p_exp - p_ctrl
+    var_s[k] <- p_exp*(1-p_exp)/n_exp + p_ctrl*(1-p_ctrl)/n_ctrl
+    n_s[k] <- n_exp + n_ctrl
+  }
+  w <- n_s / sum(n_s)           # Sample size weights
+  rd_combined <- sum(w * rd_s)
+  se_combined <- sqrt(sum(w^2 * var_s))
+  z <- rd_combined / se_combined
+  pnorm(-z)  # 1-sided: small when experimental better
+}
+```
+
+## Spending Time vs Information Fraction
+
+Two related but different quantities:
+
+| Concept | What it controls | Formula |
+|---------|-----------------|---------|
+| **Spending time** | How $\alpha$ is allocated across analyses | Typically: $d_{\text{sub},k} / d_{\text{sub},K}$ |
+| **Info fraction** | Correlation structure between analyses | $d_k / d_K$ for each hypothesis |
+
+**Key rule**: Use the **subgroup** information fraction as spending time for ALL hypotheses (both subgroup and overall).
+
+Spending time must reach 1.0 at the final analysis.
+
+## Sequential P-Values
+
+```r
+for (h in 1:nHypotheses) {
+  EOCtab$seqp[h] <- ifelse(
+    is.null(gsD2list[[h]]),
+    # Non-GSD: nominal p-value IS the sequential p
+    EOCtab$nominalP[h],
+    {
+      tem <- filter(inputResults, H == h)
+      gsDesign2::sequential_pval(
+        gs_design = gsD2list[[h]],
+        event = tem$events,
+        z = -qnorm(tem$nominalP),
+        ustime = tem$spendingTime,
+        interval = c(1e-05, 0.9999)
+      )
+    }
+  )
+}
+```
+
+## Graphical Testing
+
+```r
+result <- graphicalMCP::graph_test_shortcut(
+  graph = g0,
+  p = EOCtab$seqp,   # Sequential p-values
+  alpha = fwer,       # Total FWER (0.025)
+  verbose = TRUE
+)
+```
+
+**Shortcut test** (Bonferroni-based):
+
+- Tests each hypothesis against its allocated $\alpha$
+- When a hypothesis is rejected, reallocates its $\alpha$ per the transition matrix
+- Ignores correlations between test statistics
+
+## WPGSD: Accounting for Correlations
+
+The **wpgsd** package exploits known correlations for less conservative bounds:
+
+1. **Group sequential correlation**: $\text{corr}(Z_{A_s}, Z_{A_t}) = \sqrt{d_{\min(s,t)} / d_{\max(s,t)}}$
+
+2. **Population-induced correlation**: Since BM+ $\subset$ Overall, the intersection of events = BM+ events
+
+```r
+corr <- wpgsd::generate_corr(event_table)
+
+bound_wpgsd <- wpgsd::generate_bounds(
+  type = 3, k = n_analyses,
+  w = w, m = m_sub, corr = corr,
+  alpha = total_alpha, ...
+)
+
+ct <- wpgsd::closed_test(bound_wpgsd, p_obs)
+```
+
+## WPGSD Pitfall: `generate_corr` for k > 2
+
+**Known bug**: `generate_corr()` gives wrong results for $k > 2$ analyses.
+
+For OS (3 analyses), build the correlation matrix manually:
+
+```r
+D <- diag(d_os)  # Event counts on diagonal
+# Within-hypothesis: events at min(s,t)
+D[H1_A1, H1_A3] <- events_at_A1  # NOT A2!
+# Cross-hypothesis: intersection at min(s,t)
+D[H1_A1, H2_A2] <- sub_events_at_A1
+
+B <- diag(1/sqrt(diag(D)))
+corr_os <- B %*% D %*% B
+```
+
+For PFS (2 analyses), `generate_corr()` works correctly.
+
+# Part 5: Key Pitfalls the Skill Prevents
+
+## Benchmark Results {.smaller}
+
+The skill was evaluated on 3 tasks (design setup, sequential p-values, spending time):
+
+| Metric | With Skill | Without Skill |
+|--------|-----------|--------------|
+| **Pass rate** | **100%** | 54% |
+| **Time (sec)** | 104.4 | 95.2 |
+| **Tokens** | 17,763 | 13,892 |
+
+**Biggest value adds:**
+
+- Correct `info_scale = "h0_info"` usage (100% vs 0%)
+- Spending time guidance (100% vs 33%)
+- Avoids the `rho = sqrt(prevalence)` correlation pitfall (100% vs 0%)
+
+## Top 5 Pitfalls Prevented
+
+1. **`gs_power_ahr()` doesn't accept `info_frac`** — use `event = NULL` + `analysis_time`
+
+2. **`survdiff` returns a matrix with strata** — must sum `obs[1,]` across strata
+
+3. **Zero initial alpha breaks spending** — use a proxy hypothesis's alpha for bounds
+
+4. **`fixed_design_rd()` needs `summary()` before `gt()`** — raw object not compatible
+
+5. **`generate_corr()` wrong for k > 2** — build D matrix manually for 3+ analyses
+
+# Part 6: Creating Your Own Skills
+
+## Skill Creation Workflow
+
+1. **Identify the need** — What does your team do repeatedly that requires specialized knowledge?
+
+2. **Draft SKILL.md** — Write instructions, explain *why* not just *what*
+
+3. **Add reference files** — Code templates, API patterns, edge cases
+
+4. **Test with eval prompts** — Run Claude with and without the skill
+
+5. **Iterate** — Improve based on test results and team feedback
+
+6. **Share** — Install once, used by everyone on the team
+
+## Writing Effective Skills {.smaller}
+
+**Do:**
+
+- Explain the *why* behind each instruction
+- Include code examples for key patterns
+- Document pitfalls and edge cases
+- Use progressive disclosure (SKILL.md → references/)
+- Test with realistic prompts
+
+**Don't:**
+
+- Write rigid step-by-step scripts (Claude needs flexibility)
+- Use ALL CAPS "NEVER" / "ALWAYS" without explaining why
+- Pack everything into SKILL.md (use reference files)
+- Forget to update when packages change
+
+## Skill Description Tips
+
+The description is the **primary trigger mechanism**. Make it slightly "pushy":
+
+```yaml
+# Too narrow:
+description: >
+  How to use graphicalMCP with gsDesign2.
+
+# Better — covers related queries:
+description: >
+  Guide users through group sequential design with
+  graphical multiplicity control. Use this skill
+  whenever the user asks about: group sequential
+  designs, multiple hypotheses, sequential p-values,
+  spending time, information fraction, Maurer-Bretz
+  procedures, or alpha-spending with multiplicity.
+```
+
+## Where Skills Live
+
+```
+~/.claude/skills/          # Personal skills
+project/.claude/skills/    # Project-level skills
+```
+
+**Project-level skills** are committed to git — every team member gets them automatically when they clone the repo.
+
+The graphicalMCPgsd2 skill lives at:
+```
+gMCPLite/.claude/skills/graphicalMCPgsd2/
+```
+
+## Example: Using the Skill
+
+**You type:**
+
+> "Set up a group sequential design with 4 hypotheses for OS and PFS in biomarker positive and overall populations."
+
+**Claude (with skill):**
+
+1. Recognizes this matches the skill description
+2. Loads SKILL.md — learns the 4-phase workflow
+3. Reads `code_patterns.md` — gets exact function signatures
+4. Produces correct code with `info_frac = NULL`, `info_scale = "h0_info"`, proper spending time, stratified enrollment, etc.
+
+**Claude (without skill):** Often introduces `info_frac`, misses `info_scale`, may add incorrect correlation structures.
+
+# Summary
+
+## Key Takeaways
+
+1. **Skills** encode domain expertise for AI assistants — persistent, tested, shareable
+
+2. The **graphicalMCPgsd2** skill covers the full Maurer-Bretz workflow: design → results → testing → verification
+
+3. **Measurable impact**: 100% vs 54% pass rate on discriminating assertions
+
+4. Key patterns the skill teaches:
+   - H1 drives sample size; all others derive from it
+   - `info_frac = NULL` with `analysis_time` in gsDesign2
+   - Spending time = subgroup IF for all hypotheses
+   - `survdiff` matrix pitfall for stratified logrank
+   - `generate_corr` bug for k > 2 analyses
+
+5. **Create your own skills** for any specialized workflow your team uses regularly
+
+## Resources
+
+- **Vignette**: `vignettes/newTrialDesign.Rmd` — full worked example
+- **Skill files**: `.claude/skills/graphicalMCPgsd2/`
+- **Packages**:
+  - [graphicalMCP](https://openpharma.github.io/graphicalMCP/)
+  - [gsDesign2](https://merck.github.io/gsDesign2/)
+  - [wpgsd](https://merck.github.io/wpgsd/)
+  - [simtrial](https://merck.github.io/simtrial/)
+- **Claude Code**: https://claude.com/claude-code
+- **Skills documentation**: https://github.com/anthropics/claude-code
+
+## Questions?
+
+<br>
+<br>
+
+**Try it yourself:**
+
+```bash
+# Install Claude Code
+npm install -g @anthropic-ai/claude-code
+
+# Navigate to the project
+cd path/to/gMCPLite
+
+# Ask Claude about group sequential design
+claude
+```
+
+> "Help me set up a group sequential design with graphical multiplicity for OS and PFS in biomarker+ and overall populations."

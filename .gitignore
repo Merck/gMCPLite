@@ -2,4 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rlib/
 docs/
+/doc/
+/Meta/
+/figure/
+MK6482-012*
