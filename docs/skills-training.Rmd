@@ -159,7 +159,7 @@ Total FWER = $\sum \alpha_i$ = 0.025 (one-sided)
 
 ## The Multiplicity Graph
 
-```{r multiplicity-graph, eval=TRUE, echo=FALSE, fig.asp=0.85, fig.width=7, out.width="75%", fig.align="center"}
+```{r multiplicity-graph, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.asp=0.85, fig.width=7, out.width="75%", fig.align="center"}
 nameHypotheses <- c(
   "H1: OS\n BM+", "H2: OS\n Overall",
   "H3: PFS\n BM+", "H4: PFS\n Overall",

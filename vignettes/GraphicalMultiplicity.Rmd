@@ -451,7 +451,7 @@ for (EOCtabline in 1:nHypotheses) {
   EOCtab$seqp[EOCtabline] <-
     ifelse(is.null(gsDlist[[EOCtabline]]), EOCtab$nominalP[EOCtabline], {
       tem <- filter(inputResults, H == EOCtabline)
-      sequentialPValue(
+      gsDesign::sequentialPValue(
         gsD = gsDlist[[EOCtabline]], interval = c(1e-05, .9999),
         n.I = tem$events,
         Z = -qnorm(tem$nominalP),
