@@ -387,15 +387,33 @@ Here we assume that the subgroup prevalence was over-estimated in the study desi
 We simulate a single trial instance using an illness-death model with response.
 The model has four states: alive without response or progression (0),
 responded without progression (1), progressed (2), and dead (3).
+To illustrate a realistic scenario where not all hypotheses are rejected,
+we simulate under treatment effects that are weaker than those assumed in the design
+and slightly reversed in the Complement population.
 
 ```{r, message=FALSE}
 source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "sim_illness_death.R"))
 source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "cut_illness_death.R"))
 ```
 
+### Transition rates
+
+Transition rates are calibrated from the design assumptions for the control arm.
+For the experimental arm, we simulate under a scenario where the treatment effect is
+present in the Subgroup population but weaker than designed,
+and slightly reversed in the Complement population (HR > 1).
+
 ```{r}
 prevalence_sub <- 0.50
 pfsmedian <- 5
+
+# Simulation treatment effects (weaker than design assumptions)
+hr_os_sim_sub <- 0.70    # Design: 0.65
+hr_pfs_sim_sub <- 0.65   # Design: 0.65
+hr_os_sim_comp <- 1.1    # Design: 0.85 (reversed)
+hr_pfs_sim_comp <- 1.2   # Design: 0.85 (reversed)
+orr_exp_sim_sub <- 0.30  # Design: 0.35
+orr_exp_sim_comp <- 0.12 # Design: 0.25
 
 transition_rate <- build_transition_rates(
   strata = c("Subgroup", "Complement"),
@@ -403,24 +421,29 @@ transition_rate <- build_transition_rates(
   median_pfs = c("Subgroup" = pfsmedian, "Complement" = pfsmedian),
   median_os = c("Subgroup" = osmedian, "Complement" = osmedian),
   orr = list(
-    "Subgroup" = c(control = 0.15, experimental = 0.35),
-    "Complement" = c(control = 0.15, experimental = 0.25)
+    "Subgroup" = c(control = 0.15, experimental = orr_exp_sim_sub),
+    "Complement" = c(control = 0.15, experimental = orr_exp_sim_comp)
   ),
-  hr_pfs = c("Subgroup" = 0.65, "Complement" = 0.85),
-  hr_os = c("Subgroup" = 0.65, "Complement" = 0.85)
+  hr_pfs = c("Subgroup" = hr_pfs_sim_sub, "Complement" = hr_pfs_sim_comp),
+  hr_os = c("Subgroup" = hr_os_sim_sub, "Complement" = hr_os_sim_comp)
 )
+
+kable(transition_rate, digits = 4, caption = "Illness-death transition rates") %>%
+  kable_styling()
 ```
 
 ### Simulate one trial
 
 ```{r}
-set.seed(20250328)
+set.seed(54321)
 n_sub <- ceiling(ossub$n.I[ossub$k])  # Final targeted subgroup N from H1 design
 n_total <- ceiling(n_sub / prevalence_sub)
-steady_rate <- n_total / 15  # 18-month enrollment: 0.25*2 + 0.5*2 + 0.75*2 + 1*12 = 15 rate-months
+n_per_arm <- ceiling(n_total / 2)
+n_sim <- n_per_arm * 2
+steady_rate <- n_sim / 15  # 18-month enrollment: 0.25*2 + 0.5*2 + 0.75*2 + 1*12 = 15 rate-months
 
 sim_data <- sim_illness_death(
-  n = n_total,
+  n = n_sim,
   stratum = data.frame(stratum = c("Subgroup", "Complement"),
                        p = c(prevalence_sub, 1 - prevalence_sub)),
   block = c("control", "control", "experimental", "experimental"),
@@ -1188,8 +1211,9 @@ options(old)
 
 ## Session information
 
-You can use `sessionInfo()` to document the versions of R and R packages used to render this document.
-Note, in particular, that version 3.1 or later of the gsDesign package is needed.
+```{r}
+sessionInfo()
+```
 
 ## References
 
