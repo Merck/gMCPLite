@@ -1,5 +1,6 @@
 ---
-title: "Graphical testing for group sequential design"
+title: "Iterative graphical testing for group sequential design using graphicalMCP and wpgsd"
+subtitle: "Weighted parametric group sequential design with correlated tests"
 output:
   html_document:
     code_folding: hide
@@ -7,7 +8,7 @@ output:
     toc_depth: 2
 bibliography: gMCPLite.bib
 vignette: >
-  %\VignetteIndexEntry{Graphical testing for group sequential design}
+  %\VignetteIndexEntry{Iterative graphical testing for group sequential design using graphicalMCP and wpgsd}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -30,15 +31,26 @@ knitr::opts_chunk$set(
 
 This document is intended to evaluate statistical significance for graphical multiplicity control when used with group sequential design [@MaurerBretz2013]. In particular, we demonstrate design and analysis of a complex oncology trial.
 There are many details building on the necessarily simple example provided by @MaurerBretz2013.
-The combination of tools provided by the gMCPLite and gsDesign packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
+The combination of tools provided by the wpgsd and gsDesign packages is non-trivial, but developed in a way that is meant to be re-used in a straightforward fashion.
 This has been found to be particularly valuable to provide a prompt and verifiable conclusion in multiple trials such as @KEYNOTE048 where 14 hypotheses were evaluated using a template such as this.
+
+This vignette focuses on combining:
+
+- graphical multiplicity updating using **graphicalMCP** (graph specification and alpha reallocation),
+- weighted parametric group sequential testing using **wpgsd**.
+
+For comparison, see:
+
+- [Graphical testing for group sequential design](GraphicalMultiplicity.html) (original approach),
+- [Group sequential design using the graphicalMCP package using hgraph](graphicalMCPgsd.html) (graphicalMCP shortcut testing variant).
+
+The development version of wpgsd can be installed with `remotes::install_github("keaven/wpgsd")`.
 
 Given the complexity involved, substantial effort has been taken to provide methods to check hypothesis testing.
 
-- The initial testing is done by using sequential p-values [@LiuAnderson2008] which can then be plugged into standard graphical hypothesis testing R package, gMCP [@Bretz2009].
-- The graphical testing produces a sequence including the original multiplicity graph, followed by updated multiplicity graphs, each with a single hypothesis rejected from the previous graph.
-- The final graph, assuming not all hypotheses were rejected, provides the final Type I error available for testing each hypothesis that was not rejected.
-- Updated group sequential bounds for each hypothesis at the largest alpha-level it was evaluated can be checked vs. nominal p-values at each analysis to verify the testing conclusions reached with the above methods.
+- Under the overall graphical procedure, the current Type I error available for each hypothesis changes as hypotheses are rejected.
+- For each endpoint family (OS and PFS), weighted parametric group sequential bounds are computed and evaluated using `wpgsd`.
+- After any rejections, the overall graph is updated using `graphicalMCP`, and OS and PFS families are evaluated again until no further rejections occur.
 
 The table of contents above lays out the organization of the document.
 In short, we begin with 1) design specification followed by 2) results entry which includes event counts and nominal p-values for testing, 3) carrying out hypothesis testing, and 4) verification of the hypothesis testing results.
@@ -92,7 +104,8 @@ library(kableExtra)
 library(gt)
 library(ggplot2) # For plotting
 library(gsDesign) # Group sequential design capabilities
-library(gMCPLite) # Multiplicity evaluation
+library(graphicalMCP) # Graph-based multiplicity evaluation
+library(wpgsd) # Weighted parametric group sequential design
 library(simtrial) # Simulation of clinical trial data
 library(survival) # Survival analysis (logrank test)
 ```
@@ -107,9 +120,8 @@ Reallocation for each endpoint proceeds from the subgroup to the overall populat
 If the overall population hypothesis is rejected for a given endpoint, the reallocation is split between the two populations for another endpoint.
 The choice for allocation and reallocation illustrated here is to demonstrate a complex multiplicity scenario; when actually applying this method the allocation and reallocation choices should be carefully considered.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, fig.asp=0.9}
 ### THIS CODE NEEDS TO BE MODIFIED FOR YOUR STUDY
-# If needed, see help file for gMCPLite::hGraph() for explanation of parameters below
 # Hypothesis names
 nameHypotheses <- c(
   "H1: OS\n Subgroup",
@@ -133,15 +145,28 @@ m <- matrix(c(
 # Initial Type I error assigned to each hypothesis (one-sided)
 alphaHypotheses <- c(.01, .01, .004, 0.000, 0.0005, .0005)
 fwer <- sum(alphaHypotheses)
-# Make a ggplot representation of the above specification and display it
-g <- gMCPLite::hGraph(6,
-  alphaHypotheses = alphaHypotheses, m = m, nameHypotheses = nameHypotheses,
-  palette = cbPalette,
-  halfWid = 1, halfHgt = .35, xradius = 2.5, yradius = 1, offset = 0, trhw = .15,
-  x = c(-1.25, 1.25, -2.5, 2.5, -1.25, 1.25), y = c(2, 2, 1, 1, 0, 0),
-  trprop = 0.4, fill = as.character(c(2, 2, 4, 4, 3, 3))
-) 
-print(g)
+
+g0 <- graphicalMCP::graph_create(
+  hypotheses = alphaHypotheses / fwer,
+  transitions = m,
+  hyp_names = nameHypotheses
+)
+
+layout6 <- rbind(
+  c(0.28, 0.78),
+  c(0.72, 0.78),
+  c(0.18, 0.50),
+  c(0.82, 0.50),
+  c(0.28, 0.22),
+  c(0.72, 0.22)
+)
+
+plot(g0,
+  layout = layout6,
+  vertex.size = 45,
+  vertex.color = cbPalette[c(2, 2, 4, 4, 3, 3)],
+  vertex.label.cex = 0.9
+)
 ```
 
 This testing scheme can result in what might be referred to as time travel for passing of $\alpha$.
@@ -301,7 +326,7 @@ pfs <- gsDesign::gsSurv(
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfs)
-rownames(tab) <- 1:nrow(tab)
+rownames(tab) <- seq_len(nrow(tab))
 tab %>%
   kable(caption = "Design for PFS in the overall population") %>%
   kable_styling()
@@ -379,9 +404,10 @@ present in the Subgroup population but weaker than designed,
 and slightly reversed in the Complement population (HR > 1).
 
 ```{r}
-# Simulation treatment effects (weaker than design assumptions)
 prevalence_sub <- 0.50
 pfsmedian <- 5
+
+# Simulation treatment effects (weaker than design assumptions)
 hr_os_sim_sub <- 0.70    # Design: 0.65
 hr_pfs_sim_sub <- 0.65   # Design: 0.65
 hr_os_sim_comp <- 1.1    # Design: 0.85 (reversed)
@@ -581,272 +607,600 @@ kable(inputResults, caption = "Results from simulated trial data") %>%
   kable_styling()
 ```
 
-## Testing hypotheses
+## Testing hypotheses (iterative approach)
 
-### Compute sequential p-values for each hypothesis
+In this vignette we test OS and PFS hypotheses separately using `wpgsd` under the *current* Type I error allocation given by the overall graphical procedure. Whenever one or more hypotheses are rejected, we update the overall graph using `graphicalMCP` and repeat. This continues until no additional hypotheses can be rejected.
 
-Sequential p-value computation is done in one loop in an attempt to minimize chances for coding errors.
-For hypotheses with group sequential designs (H1–H4), the sequential p-value summarizes an entire sequence of analyses into a single p-value comparable to $\alpha$.
-For single-analysis hypotheses (H5, H6), the sequential p-value equals the nominal p-value.
+### Endpoint-specific setup for wpgsd
 
-```{r,message=FALSE}
-### USER SHOULD NOT NEED TO MODIFY THIS CODE
-EOCtab <- NULL
-EOCtab <- inputResults %>%
-  group_by(H) %>%
-  slice(1) %>%
-  ungroup() %>%
-  select("H", "Pop", "Endpoint", "nominalP")
-EOCtab$seqp <- .9999
-for (EOCtabline in 1:nHypotheses) {
-  EOCtab$seqp[EOCtabline] <-
-    ifelse(is.null(gsDlist[[EOCtabline]]), EOCtab$nominalP[EOCtabline], {
-      tem <- filter(inputResults, H == EOCtabline)
-      gsDesign::sequentialPValue(
-        gsD = gsDlist[[EOCtabline]], interval = c(1e-05, .9999),
-        n.I = tem$events,
-        Z = -qnorm(tem$nominalP),
-        usTime = tem$spendingTime
-      )
-    })
-}
-```
-
-The following table shows both the first-analysis nominal p-value and the sequential p-value for each hypothesis.
-The sequential p-value accounts for the group sequential design and is used for multiplicity-adjusted testing.
-
-```{r}
-EOCtab %>%
-  select("H", "Pop", "Endpoint", "nominalP", "seqp") %>%
-  kable(
-    col.names = c("H", "Population", "Endpoint", "Nominal p (IA1)", "Sequential p"),
-    caption = "Nominal and sequential p-values by hypothesis"
-  ) %>%
-  kable_styling()
-```
-
-```{r}
-EOCtab <- EOCtab %>% select(-"nominalP")
-```
-
-### Evaluate hypothesis rejection using gMCPLite
-
-We need to set up a `graph` object as implemented in the gMCPLite package.
+We treat OS (H1/H2) and PFS (H3/H4) as two separate 2-hypothesis graphical procedures, each with subgroup nested in overall population.
 
 ```{r,message=FALSE,warning=FALSE}
-# Make a graph object
-rownames(m) <- nameHypotheses
-graph <- matrix2graph(m)
-# Add weights to the object based on alpha allocation
-graph <- setWeights(graph, alphaHypotheses / fwer)
-rescale <- 45
-d <- g$layers[[2]]$data
-rownames(d) <- rownames(m)
-# graph@nodeAttr$X <- rescale * d$x * 1.75
-# graph@nodeAttr$Y <- -rescale * d$y * 2
+# Helper: correlation matrix for 2 nested populations (subgroup nested in overall)
+make_corr_nested_2hyp <- function(n_sub, n_all) {
+  stopifnot(length(n_sub) == length(n_all))
+  n_sub <- as.numeric(n_sub)
+  n_all <- as.numeric(n_all)
+  k <- length(n_sub)
+
+  # Test ordering matches wpgsd examples: H1_A1, H2_A1, H1_A2, H2_A2, ...
+  n_vec <- as.vector(rbind(n_sub, n_all))
+  overlap <- matrix(0, nrow = 2 * k, ncol = 2 * k)
+
+  for (a in seq_len(k)) {
+    for (b in seq_len(k)) {
+      amin <- min(a, b)
+      # Indices in the (H1,H2) x analyses ordering
+      ia1 <- 2 * (a - 1) + 1
+      ia2 <- 2 * (a - 1) + 2
+      ib1 <- 2 * (b - 1) + 1
+      ib2 <- 2 * (b - 1) + 2
+
+      # subgroup-subgroup
+      overlap[ia1, ib1] <- n_sub[amin]
+      # overall-overall
+      overlap[ia2, ib2] <- n_all[amin]
+      # subgroup-overall (and overall-subgroup)
+      overlap[ia1, ib2] <- n_sub[amin]
+      overlap[ia2, ib1] <- n_sub[amin]
+    }
+  }
+
+  corr <- overlap / sqrt(outer(n_vec, n_vec))
+  # Ensure numerical symmetry
+  corr <- (corr + t(corr)) / 2
+  corr
+}
+
+# Helper: run wpgsd for a 2-hypothesis graph with H1 -> H2 recycling
+run_wpgsd_2hyp <- function(alpha_total, w_local, p_obs, corr, info_frac) {
+  if (is.na(alpha_total) || alpha_total <= 0) {
+    return(list(bounds = NULL, closed_test = NULL, rejected = c(FALSE, FALSE)))
+  }
+
+  w_local <- as.numeric(w_local)
+  if (length(w_local) != 2) stop("w_local must have length 2")
+  if (any(w_local <= 0)) stop("w_local must be strictly positive for wpgsd")
+  w_local <- w_local / sum(w_local)
+
+  m_local <- matrix(c(
+    0, 1,
+    0, 0
+  ), nrow = 2, byrow = TRUE)
+
+  # Overall spending time (type = 2) uses the minimum information fraction
+  # across hypotheses at each analysis
+  t_overall <- pmin(info_frac[[1]], info_frac[[2]])
+
+  bounds <- wpgsd::generate_bounds(
+    type = 2,
+    k = nrow(p_obs),
+    w = w_local,
+    m = m_local,
+    corr = corr,
+    alpha = alpha_total,
+    sf = gsDesign::sfLDOF,
+    sfparm = 0,
+    t = t_overall
+  )
+
+  ct <- wpgsd::closed_test(bounds, p_obs)
+  ct <- as.data.frame(ct)
+
+  rejected <- c(
+    any(as.character(ct$H1) == "Success"),
+    any(as.character(ct$H2) == "Success")
+  )
+
+  list(bounds = bounds, closed_test = ct, rejected = rejected)
+}
+
+# Helper: run endpoint family under current alpha allocation.
+# If one hypothesis has alpha = 0, fall back to single-hypothesis group sequential testing.
+run_family_nested_2hyp <- function(alpha_vec, p_obs, corr, info_frac) {
+  alpha_vec <- as.numeric(alpha_vec)
+  if (length(alpha_vec) != 2) stop("alpha_vec must have length 2")
+
+  if (any(alpha_vec < 0)) stop("alpha_vec must be nonnegative")
+  if (sum(alpha_vec) <= 0) {
+    return(list(bounds = NULL, closed_test = NULL, rejected = c(FALSE, FALSE)))
+  }
+
+  active <- alpha_vec > 0
+
+  if (sum(active) == 2) {
+    return(run_wpgsd_2hyp(
+      alpha_total = sum(alpha_vec),
+      w_local = alpha_vec,
+      p_obs = p_obs,
+      corr = corr,
+      info_frac = info_frac
+    ))
+  }
+
+  # Single-hypothesis fallback
+  i <- which(active)[1]
+  k <- nrow(p_obs)
+  timing <- if (k > 1) info_frac[[i]][1:(k - 1)] else numeric(0)
+  gd <- gsDesign::gsDesign(
+    k = k,
+    test.type = 1,
+    alpha = alpha_vec[i],
+    sfu = gsDesign::sfLDOF,
+    timing = timing
+  )
+  p_bound <- 1 - stats::pnorm(gd$upper$bound)
+  p_col <- if (i == 1) p_obs$H1 else p_obs$H2
+
+  ct <- data.frame(
+    H1 = rep(NA_character_, k),
+    H2 = rep(NA_character_, k),
+    Analysis = paste("Analysis", p_obs$Analysis),
+    stringsAsFactors = FALSE
+  )
+  ct[[if (i == 1) "H1" else "H2"]] <- ifelse(p_col <= p_bound, "Success", "Fail")
+
+  rejected <- c(FALSE, FALSE)
+  rejected[i] <- any(p_col <= p_bound)
+
+  list(bounds = NULL, closed_test = ct, rejected = rejected)
+}
+
+# OS inputs (H1/H2)
+n_os_sub <- ossub$n.I
+n_os_all <- os$n.I
+p_obs_os <- tibble::tibble(
+  Analysis = 1:3,
+  H1 = dplyr::filter(inputResults, H == 1) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP),
+  H2 = dplyr::filter(inputResults, H == 2) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP)
+)
+corr_os <- make_corr_nested_2hyp(n_os_sub, n_os_all)
+info_os <- list(n_os_sub / max(n_os_sub), n_os_all / max(n_os_all))
+
+# PFS inputs (H3/H4) encoded as local (H1/H2) for wpgsd
+n_pfs_sub <- pfssub$n.I
+n_pfs_all <- pfs$n.I
+p_obs_pfs <- tibble::tibble(
+  Analysis = 1:2,
+  H1 = dplyr::filter(inputResults, H == 3) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP),
+  H2 = dplyr::filter(inputResults, H == 4) %>% dplyr::arrange(Analysis) %>% dplyr::pull(nominalP)
+)
+corr_pfs <- make_corr_nested_2hyp(n_pfs_sub, n_pfs_all)
+info_pfs <- list(n_pfs_sub / max(n_pfs_sub), n_pfs_all / max(n_pfs_all))
+
+# ORR inputs (H5/H6): fixed tests at the current allocation
+p_orr <- c(
+  dplyr::filter(inputResults, H == 5) %>% dplyr::pull(nominalP),
+  dplyr::filter(inputResults, H == 6) %>% dplyr::pull(nominalP)
+)
 ```
 
-Now we add the sequential p-values and evaluate which hypotheses have been rejected.
+### Correlation matrices for test statistics
 
-```{r}
-result <- gMCP(graph = graph, pvalues = EOCtab$seqp, alpha = fwer)
-result@rejected
-# now map back into EOCtable (CHECK AGAIN!!!)
-EOCtab$Rejected <- result@rejected
-EOCtab$adjPValues <- result@adjPValues
+The WPGSD methods use the correlation structure of test statistics across analyses. Below we show the correlation matrices implied by the event-overlap tables for the OS and PFS families. For convenience, we also show a combined correlation matrix with OS and PFS blocks (and 0 correlation between OS and PFS blocks).
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr <- function(x, title) {
+  xt <- as.data.frame(round(x, 2))
+  xt$Test <- if (!is.null(rownames(xt))) rownames(xt) else as.character(seq_len(nrow(xt)))
+  xt <- xt %>% dplyr::select(.data$Test, dplyr::everything())
+  gt::gt(xt) %>%
+    gt::tab_header(title = title) %>%
+    gt::tab_options(
+      table.width = gt::pct(100),
+      table.font.size = gt::px(10),
+      data_row.padding = gt::px(2),
+      heading.title.font.size = gt::px(12)
+    ) %>%
+    gt::sub_missing(missing_text = "")
+}
+
+# Make consistent test-statistic names when wpgsd does not set dimnames
+make_names_2hyp <- function(h1, h2, k) {
+  as.vector(rbind(paste0(h1, "_A", seq_len(k)), paste0(h2, "_A", seq_len(k))))
+}
+
+k_os <- length(n_os_sub)
+k_pfs <- length(n_pfs_sub)
+
+nm_os <- make_names_2hyp("H1", "H2", k_os)
+nm_pfs <- make_names_2hyp("H3", "H4", k_pfs)
+
+# Use named copies for display (do not modify the matrices used for computation)
+corr_os_disp <- corr_os
+rownames(corr_os_disp) <- nm_os
+colnames(corr_os_disp) <- nm_os
+
+corr_pfs_disp <- corr_pfs
+rownames(corr_pfs_disp) <- nm_pfs
+colnames(corr_pfs_disp) <- nm_pfs
+
+# Combined block-diagonal correlation matrix (OS + PFS)
+corr_all <- matrix(
+  0,
+  nrow = nrow(corr_os_disp) + nrow(corr_pfs_disp),
+  ncol = ncol(corr_os_disp) + ncol(corr_pfs_disp)
+)
+corr_all[seq_len(nrow(corr_os_disp)), seq_len(ncol(corr_os_disp))] <- corr_os_disp
+idx_pfs <- (nrow(corr_os_disp) + 1):(nrow(corr_os_disp) + nrow(corr_pfs_disp))
+jdx_pfs <- (ncol(corr_os_disp) + 1):(ncol(corr_os_disp) + ncol(corr_pfs_disp))
+corr_all[idx_pfs, jdx_pfs] <- corr_pfs_disp
+
+rn_all <- c(paste0("OS_", nm_os), paste0("PFS_", nm_pfs))
+colnames(corr_all) <- rn_all
+rownames(corr_all) <- rn_all
+
+# Display-only: show off-block OS–PFS correlations as missing/blank
+corr_all_disp <- corr_all
+corr_all_disp[seq_len(nrow(corr_os_disp)), jdx_pfs] <- NA_real_
+corr_all_disp[idx_pfs, seq_len(ncol(corr_os_disp))] <- NA_real_
+invisible(NULL)
 ```
 
-## Verification of hypotheses rejected
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr(corr_os_disp, "OS family: correlation matrix for Z statistics (H1/H2 across analyses)")
+```
 
-```{r}
-# Number of graphs is used repeatedly
-ngraphs <- length(result@graphs)
-# Set up tibble with hypotheses rejected at each stage
-rejected <- NULL
-for (i in seq_along(result@graphs)) {
-  rejected <- rbind(
-    rejected,
-    tibble(
-      H = 1:nHypotheses, Stage = i,
-      Rejected = as.logical(result@graphs[[i]]@nodeAttr$rejected)
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr(corr_pfs_disp, "PFS family: correlation matrix for Z statistics (H3/H4 across analyses; encoded as local H1/H2)")
+```
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+fmt_corr(corr_all_disp, "Combined correlation matrix (block-diagonal OS + PFS)")
+```
+
+### Iterative testing and graph updates
+
+```{r,message=FALSE,warning=FALSE}
+max_iter <- 20
+
+g_cur <- g0
+graphs_iter <- list(g_cur)
+
+rejected_global <- rep(FALSE, nHypotheses)
+iter_log <- NULL
+
+for (iter in 1:max_iter) {
+  alpha_cur <- fwer * as.numeric(g_cur$hypotheses)
+
+  # OS: alpha allocated to H1/H2 in the current overall graph
+  os_res <- run_family_nested_2hyp(alpha_cur[1:2], p_obs = p_obs_os, corr = corr_os, info_frac = info_os)
+  rej_os <- os_res$rejected
+
+  # PFS: alpha allocated to H3/H4 in the current overall graph
+  pfs_res <- run_family_nested_2hyp(alpha_cur[3:4], p_obs = p_obs_pfs, corr = corr_pfs, info_frac = info_pfs)
+  rej_pfs <- pfs_res$rejected
+
+  # ORR: fixed tests under current allocation
+  rej_orr <- (p_orr <= alpha_cur[5:6]) & (alpha_cur[5:6] > 0)
+
+  newly_rejected <- which(c(rej_os, rej_pfs, rej_orr) & !rejected_global)
+
+  iter_log <- dplyr::bind_rows(
+    iter_log,
+    tibble::tibble(
+      iteration = iter,
+      alpha_H1 = alpha_cur[1],
+      alpha_H2 = alpha_cur[2],
+      alpha_H3 = alpha_cur[3],
+      alpha_H4 = alpha_cur[4],
+      alpha_H5 = alpha_cur[5],
+      alpha_H6 = alpha_cur[6],
+      newly_rejected = if (length(newly_rejected) == 0) "" else paste(newly_rejected, collapse = ",")
     )
   )
+
+  if (length(newly_rejected) == 0) break
+
+  rejected_global[newly_rejected] <- TRUE
+  gu <- graphicalMCP::graph_update(g_cur, delete = newly_rejected)
+  g_cur <- gu$updated_graph
+  graphs_iter[[length(graphs_iter) + 1]] <- g_cur
 }
-rejected <- rejected %>%
-  filter(Rejected) %>%
-  group_by(H) %>%
-  summarize(graphRejecting = min(Stage) - 1, .groups = "drop") %>% # Last graph with weight>0 where H rejected
-  arrange(graphRejecting)
 
-# Get final weights
-# for hypotheses not rejected, this will be final weight where
-# no hypothesis could be rejected
-lastWeights <- as.numeric(result@graphs[[ngraphs]]@weights)
-lastGraph <- rep(ngraphs, nrow(EOCtab))
+iter_log %>%
+  dplyr::mutate(
+    across(starts_with("alpha_"), ~ round(.x, 6))
+  ) %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Iteration log: current alpha allocation and new rejections")
+```
 
-# We will update for rejected hypotheses with last positive weight for each
-if (ngraphs > 1) {
-  for (i in seq_len(ngraphs - 1)) {
-    lastWeights[rejected$H[i]] <- as.numeric(result@graphs[[i]]@weights[rejected$H[i]])
-    lastGraph[rejected$H[i]] <- i
+### Closed testing results under the final allocation
+
+```{r,message=FALSE,warning=FALSE}
+# Recompute under the final allocation from the last iteration
+alpha_final <- fwer * as.numeric(g_cur$hypotheses)
+
+os_final <- run_family_nested_2hyp(alpha_final[1:2], p_obs = p_obs_os, corr = corr_os, info_frac = info_os)
+pfs_final <- run_family_nested_2hyp(alpha_final[3:4], p_obs = p_obs_pfs, corr = corr_pfs, info_frac = info_pfs)
+
+if (!is.null(os_final$closed_test)) {
+  os_final$closed_test %>%
+    gt::gt() %>%
+    gt::tab_header(title = "OS (H1/H2): closed testing results (wpgsd)")
+}
+
+if (!is.null(pfs_final$closed_test)) {
+  pfs_final$closed_test %>%
+    gt::gt() %>%
+    gt::tab_header(title = "PFS (H3/H4): closed testing results (wpgsd; encoded as local H1/H2)")
+}
+```
+
+### Fully adjusted p-values for each hypothesis
+
+Here we compute fully adjusted p-values as the smallest familywise error rate (overall \(\alpha\)) at which a hypothesis would be rejected under the full iterative procedure described above. This can be computed regardless of whether a hypothesis is rejected under the current allocation.
+
+```{r,message=FALSE,warning=FALSE}
+iterate_rejections <- function(fwer_val) {
+  g_cur0 <- g0
+  rejected <- rep(FALSE, nHypotheses)
+
+  for (iter in 1:20) {
+    alpha_cur <- fwer_val * as.numeric(g_cur0$hypotheses)
+
+    os_res <- run_family_nested_2hyp(alpha_cur[1:2], p_obs = p_obs_os, corr = corr_os, info_frac = info_os)
+    pfs_res <- run_family_nested_2hyp(alpha_cur[3:4], p_obs = p_obs_pfs, corr = corr_pfs, info_frac = info_pfs)
+    rej_orr <- (p_orr <= alpha_cur[5:6]) & (alpha_cur[5:6] > 0)
+
+    newly <- which(c(os_res$rejected, pfs_res$rejected, rej_orr) & !rejected)
+    if (length(newly) == 0) break
+
+    rejected[newly] <- TRUE
+    g_cur0 <- graphicalMCP::graph_update(g_cur0, delete = newly)$updated_graph
   }
+
+  rejected
 }
-EOCtab$lastAlpha <- fwer * lastWeights
-EOCtab$lastGraph <- lastGraph
-EOCtabx <- EOCtab
-names(EOCtabx) <- c(
-  "Hypothesis", "Population", "Endpoint", "Sequential p",
-  "Rejected", "Adjusted p", "Max alpha allocated", "Last Graph"
-)
-# Display table with desired column order
-# Delayed following until after multiplicity graph sequence
-# EOCtabx %>% select(c(1:4,7,5:6,8)) %>% kable() %>% kable_styling()
-```
 
-### Multiplicity graph sequence from gMCPLite {.tabset}
-
-```{r,message=FALSE,warning=FALSE,results='asis'}
-### THERE SHOULD BE NO NEED TO MODIFY THIS CODE SECTION
-for (i in seq_len(ngraphs)) {
-  mx <- result@graphs[[i]]@m
-  rownames(mx) <- NULL
-  colnames(mx) <- NULL
-  g <- gMCPLite::hGraph(
-    nHypotheses = nHypotheses,
-    alphaHypotheses = result@graphs[[i]]@weights * fwer,
-    m = mx,
-    nameHypotheses = nameHypotheses,
-    palette = cbPalette,
-    halfWid = 1, halfHgt = .35, xradius = 2.5, yradius = 1, offset = 0, trhw = .15,
-    x = c(-1.25, 1.25, -2.5, 2.5, -1.25, 1.25), y = c(2, 2, 1, 1, 0, 0),
-    trprop = .4, fill = as.character(c(2, 2, 4, 4, 3, 3))
-  ) 
-  cat(" \n")
-  cat("####", paste(" Graph", as.character(i), " \n\n"))
-  print(g)
-  cat(" \n\n\n")
-}
-```
-
-### Comparison of sequential p-values to multiplicity graphs
-
-We can compare sequential p-values to available $\alpha$ in each graph.
-In the column 'Last Graph' we can see one of 2 things:
-
-1) For rejected hypotheses, the maximum $\alpha$ allocated to the hypothesis.
-2) For the remaining hypotheses, the maximum $\alpha$ allocated is in the last graph before testing stops; since each sequential p-value is greater than the allocated $\alpha$ for the corresponding hypothesis, none of these hypotheses were rejected.
-3) Adjusted p-values for each hypothesis can be compared to the FWER (0.025) to see the same pattern of rejection.
-
-```{r}
-EOCtabx %>%
-  select(c(1:4, 7, 5:6, 8)) %>%
-  kable() %>%
-  kable_styling()
-```
-
-### Bounds at final $\alpha$ allocated for group sequential tests {.tabset}
-
-As a separate validation, we examine group sequential bounds for each hypothesis updated with 1) the maximum $\alpha$ allocated above, 2) the number of events at each analysis, and 3) the cumulative spending at each analysis above. The nominal p-value for at least one of the analyses performed for each rejected hypotheses should be less than or equal to the nominal p-value in the group sequential design.
-For each hypothesis not rejected, all nominal p-values are greater than the its corresponding bound.
-For hypotheses tested without a group sequential design, the nominal p-value for the test of that hypothesis can be compared to the maximum alpha allocated in the above table.
-
-```{r,results='asis'}
-for (i in 1:nHypotheses) {
-  # Set up tab for hypothesis in output
-  cat("####", paste(" Hypothesis", as.character(i), " \n"))
-  # Get results for hypothesis
-  hresults <- inputResults %>% filter(H == i)
-  # Print out max alpha allocated
-  xx <- paste("Max alpha allocated from above table: ",
-    as.character(EOCtab$lastAlpha[i]),
-    sep = ""
+# Cache to avoid re-running the full procedure repeatedly
+rej_cache <- new.env(parent = emptyenv())
+get_rej <- function(fwer_val) {
+  key <- sprintf("%.12f", fwer_val)
+  if (exists(key, envir = rej_cache, inherits = FALSE)) {
+    return(get(key, envir = rej_cache, inherits = FALSE))
+  }
+  val <- tryCatch(
+    iterate_rejections(fwer_val),
+    error = function(e) rep(FALSE, nHypotheses)
   )
-  d <- gsDlist[[i]]
-  # If not group sequential for this hypothesis, print the max alpha allocated
-  # and the nominal p-value
-  if (is.null(d)) {
-    cat("Maximum alpha allocated: ")
-    cat(EOCtab$lastAlpha[i])
-    cat("\n\n")
-    cat("Nominal p-value for hypothesis test: ")
-    cat(hresults$nominalP)
-    cat("\n\n")
-  }
-  # For group sequential tests, print max alpha allocated and
-  # corresponding group sequential bounds
-  if (!is.null(gsDlist[[i]])) {
-    # Get other info for current hypothesis
-    n.I <- hresults$events
-    usTime <- hresults$spendingTime
-    n.Iplan <- max(d$n.I)
-    # Nominal p-values observed at each analysis; pad with 0.9999 for later analyses
-    obs_nomP <- hresults$nominalP
-    k_obs <- length(obs_nomP)
-    k_max <- 3  # maximum number of analyses in the trial
-    if (k_obs < k_max) {
-      obs_nomP <- c(obs_nomP, rep(0.9999, k_max - k_obs))
-    }
-    if (length(n.I) == 1) {
-      n.I <- c(n.I, n.Iplan)
-      usTime <- c(usTime, 1)
-    }
-    # If no alpha allocated, just print text line to note this along with the 0 alpha allocated
-    if (EOCtab$lastAlpha[i] == 0) {
-      cat("Maximum alpha allocated: 0\n\n")
-      cat("No testing required\n\n")
-    }
-    if (EOCtab$lastAlpha[i] > 0) {
-      dupdate <- gsDesign::gsDesign(
-        alpha = EOCtab$lastAlpha[i],
-        k = length(n.I),
-        n.I = n.I,
-        usTime = usTime,
-        maxn.IPlan = n.Iplan,
-        n.fix = d$n.fix,
-        test.type = 1,
-        sfu = d$upper$sf,
-        sfupar = d$upper$param
-      )
-      bound_tbl <- tibble(
-        Analysis = seq_along(n.I),
-        Z = dupdate$upper$bound,
-        `Spending time` = usTime,
-        `Nominal p bound` = pnorm(-dupdate$upper$bound)
-      )
-      # Observed nominal p (padded with 0.9999 beyond final analysis for this endpoint)
-      bound_tbl$`Nominal p observed` <- obs_nomP[bound_tbl$Analysis]
-      # Sequential and repeated p-values at each analysis
-      all_z <- -qnorm(obs_nomP)
-      n_analyses <- nrow(bound_tbl)
-      seq_p_by_analysis <- numeric(n_analyses)
-      rep_p_by_analysis <- numeric(n_analyses)
-      for (aa in seq_len(n_analyses)) {
-        z_seq <- c(all_z[1:aa], rep(-qnorm(0.9999), n_analyses - aa))
-        seq_p_by_analysis[aa] <- gsDesign::sequentialPValue(
-          gsD = d, interval = c(1e-05, .9999),
-          n.I = n.I,
-          Z = z_seq,
-          usTime = usTime
-        )
-        z_rep <- rep(-qnorm(0.9999), n_analyses)
-        z_rep[aa] <- all_z[aa]
-        rep_p_by_analysis[aa] <- gsDesign::sequentialPValue(
-          gsD = d, interval = c(1e-05, .9999),
-          n.I = n.I,
-          Z = z_rep,
-          usTime = usTime
-        )
-      }
-      bound_tbl$`Repeated p` <- rep_p_by_analysis
-      bound_tbl$`Sequential p` <- seq_p_by_analysis
+  assign(key, val, envir = rej_cache)
+  val
+}
 
-      bound_tbl %>%
-        kable(caption = xx, row.names = FALSE) %>%
-        kable_styling() %>%
-        cat()
-      cat("\n\n")
+# Binary search for the minimal overall alpha leading to rejection
+find_adj_p <- function(h, tol_iter = 15) {
+  # Search upward from the current fwer, avoiding extreme alpha values
+  hi <- fwer
+  if (hi <= 0) hi <- 0.001
+  while (hi < 0.5 && !get_rej(hi)[h]) hi <- hi * 2
+  if (!get_rej(hi)[h]) return(NA_real_)
+  lo <- 0
+  for (i in seq_len(tol_iter)) {
+    mid <- (lo + hi) / 2
+    if (get_rej(mid)[h]) {
+      hi <- mid
+    } else {
+      lo <- mid
     }
   }
+  hi
+}
+
+adj_table <- tibble::tibble(
+  Hypothesis = nameHypotheses,
+  adjusted_p = vapply(seq_len(nHypotheses), find_adj_p, numeric(1)),
+  rejected_at_fwer = rejected_global
+)
+
+# Add nominal p-value + analysis (using first success if rejected, else last analysis)
+analysis_os_h1 <- if (!is.null(os_final$closed_test) && any(os_final$closed_test$H1 == "Success", na.rm = TRUE)) {
+  min(which(os_final$closed_test$H1 == "Success"))
+} else {
+  nrow(p_obs_os)
+}
+analysis_os_h2 <- if (!is.null(os_final$closed_test) && any(os_final$closed_test$H2 == "Success", na.rm = TRUE)) {
+  min(which(os_final$closed_test$H2 == "Success"))
+} else {
+  nrow(p_obs_os)
+}
+analysis_pfs_h3 <- if (!is.null(pfs_final$closed_test) && any(pfs_final$closed_test$H1 == "Success", na.rm = TRUE)) {
+  min(which(pfs_final$closed_test$H1 == "Success"))
+} else {
+  nrow(p_obs_pfs)
+}
+analysis_pfs_h4 <- if (!is.null(pfs_final$closed_test) && any(pfs_final$closed_test$H2 == "Success", na.rm = TRUE)) {
+  min(which(pfs_final$closed_test$H2 == "Success"))
+} else {
+  nrow(p_obs_pfs)
+}
+
+nom_p <- c(
+  p_obs_os$H1[analysis_os_h1],
+  p_obs_os$H2[analysis_os_h2],
+  p_obs_pfs$H1[analysis_pfs_h3],
+  p_obs_pfs$H2[analysis_pfs_h4],
+  p_orr[1],
+  p_orr[2]
+)
+
+analysis_used <- c(
+  analysis_os_h1,
+  analysis_os_h2,
+  analysis_pfs_h3,
+  analysis_pfs_h4,
+  1,
+  1
+)
+
+# Sequential p-values as minimal within-family alpha needed for rejection
+# at the specified analysis, holding within-family weights fixed.
+seq_p_family_2hyp <- function(h_local, analysis, w_local, p_obs_full, corr_full, info_frac_full) {
+  w_local <- as.numeric(w_local)
+  w_local <- pmax(w_local, 1e-12)
+  w_local <- w_local / sum(w_local)
+
+  # Restrict to the analyses up to `analysis`
+  p_obs <- p_obs_full %>% dplyr::filter(analysis <= !!analysis)
+  corr <- corr_full[seq_len(2 * analysis), seq_len(2 * analysis), drop = FALSE]
+  info_frac <- list(
+    info_frac_full[[1]][seq_len(analysis)],
+    info_frac_full[[2]][seq_len(analysis)]
+  )
+
+  rejects_at <- function(alpha_total) {
+    res <- tryCatch(
+      run_wpgsd_2hyp(
+        alpha_total = alpha_total,
+        w_local = w_local,
+        p_obs = p_obs,
+        corr = corr,
+        info_frac = info_frac
+      ),
+      error = function(e) NULL
+    )
+    if (is.null(res)) return(FALSE)
+    isTRUE(res$rejected[h_local])
+  }
+
+  # If we can't reject even with alpha = 1, report 1
+  if (!rejects_at(1)) return(1)
+
+  lo <- 0
+  hi <- 1
+  for (i in 1:20) {
+    mid <- (lo + hi) / 2
+    if (rejects_at(mid)) {
+      hi <- mid
+    } else {
+      lo <- mid
+    }
+  }
+  hi
+}
+
+w_os_local <- alpha_final[1:2]
+w_os_local <- if (sum(w_os_local) > 0) w_os_local / sum(w_os_local) else c(0.5, 0.5)
+p_obs_os_w <- p_obs_os %>% dplyr::transmute(analysis = Analysis, H1 = H1, H2 = H2)
+
+w_pfs_local <- alpha_final[3:4]
+w_pfs_local <- if (sum(w_pfs_local) > 0) w_pfs_local / sum(w_pfs_local) else c(0.5, 0.5)
+p_obs_pfs_w <- p_obs_pfs %>% dplyr::transmute(analysis = Analysis, H1 = H1, H2 = H2)
+
+seq_p <- c(
+  seq_p_family_2hyp(1, analysis_os_h1, w_os_local, p_obs_os_w, corr_os, info_os),
+  seq_p_family_2hyp(2, analysis_os_h2, w_os_local, p_obs_os_w, corr_os, info_os),
+  seq_p_family_2hyp(1, analysis_pfs_h3, w_pfs_local, p_obs_pfs_w, corr_pfs, info_pfs),
+  seq_p_family_2hyp(2, analysis_pfs_h4, w_pfs_local, p_obs_pfs_w, corr_pfs, info_pfs),
+  p_orr[1],
+  p_orr[2]
+)
+
+adj_table2 <- adj_table %>%
+  dplyr::mutate(
+    Analysis = analysis_used,
+    nominal_p = nom_p,
+    sequential_p = seq_p
+  )
+
+adj_table2 %>%
+  gt::gt() %>%
+  gt::fmt_number(columns = c("nominal_p", "sequential_p", "adjusted_p"), decimals = 6) %>%
+  gt::tab_header(title = "Fully adjusted p-values (minimum familywise error rate for rejection)")
+```
+
+### Compare to graphicalMCP adjusted p-values and weighted Bonferroni
+
+The fully adjusted p-values above are based on the full iterative procedure (graph updates + WPGSD family testing). For comparison, we can also:
+
+- apply the graphicalMCP shortcut procedure to the sequential p-values, and
+- compute a weighted Bonferroni-style adjusted p-value based on the maximum \(\alpha\) allocated to each hypothesis during the shortcut rejection sequence.
+
+```{r,message=FALSE,warning=FALSE}
+# Shortcut graphicalMCP procedure based on sequential p-values
+res_short <- graphicalMCP::graph_test_shortcut(
+  graph = g0,
+  p = seq_p,
+  alpha = fwer,
+  verbose = FALSE
+)
+
+adj_p_short <- res_short$outputs$adjusted_p
+rej_short <- res_short$outputs$rejected
+
+if (is.numeric(rej_short)) {
+  rej_short_logical <- rep(FALSE, nHypotheses)
+  rej_short_logical[rej_short] <- TRUE
+} else {
+  rej_short_logical <- as.logical(rej_short)
+}
+
+# Track the maximum alpha allocated to each hypothesis in the shortcut rejection sequence
+rejected_order_short <- which(rej_short_logical)[order(adj_p_short[rej_short_logical])]
+
+graphs_short <- list(g0)
+if (length(rejected_order_short) > 0) {
+  gu_short <- graphicalMCP::graph_update(g0, delete = rejected_order_short)
+  graphs_short <- gu_short$intermediate_graphs
+}
+ng_short <- length(graphs_short)
+
+lastWeights_short <- as.numeric(graphs_short[[ng_short]]$hypotheses)
+lastGraph_short <- rep(ng_short, nHypotheses)
+
+if (length(rejected_order_short) > 0) {
+  for (j in seq_along(rejected_order_short)) {
+    h <- rejected_order_short[j]
+    lastWeights_short[h] <- as.numeric(graphs_short[[j]]$hypotheses[h])
+    lastGraph_short[h] <- j
+  }
+}
+
+lastAlpha_short <- fwer * lastWeights_short
+adj_p_wbonf <- ifelse(lastWeights_short > 0, pmin(1, seq_p / lastWeights_short), NA_real_)
+rej_wbonf <- (seq_p <= lastAlpha_short) & (lastWeights_short > 0)
+
+comp_tab <- tibble::tibble(
+  Hypothesis = nameHypotheses,
+  sequential_p = seq_p,
+  rejected_full_iter = rejected_global,
+  adjusted_p_full_iter = adj_table$adjusted_p,
+  rejected_shortcut = rej_short_logical,
+  adjusted_p_shortcut = adj_p_short,
+  max_alpha_alloc_shortcut = lastAlpha_short,
+  adjusted_p_weighted_bonf = adj_p_wbonf,
+  rejected_weighted_bonf = rej_wbonf,
+  last_graph_shortcut = lastGraph_short
+)
+
+comp_tab %>%
+  gt::gt() %>%
+  gt::fmt_number(
+    columns = c(
+      "sequential_p",
+      "adjusted_p_full_iter",
+      "adjusted_p_shortcut",
+      "max_alpha_alloc_shortcut",
+      "adjusted_p_weighted_bonf"
+    ),
+    decimals = 6
+  ) %>%
+  gt::tab_header(title = "Comparison: full iterative vs shortcut graphicalMCP vs weighted Bonferroni")
+```
+
+### Overall multiplicity graph by iteration {.tabset}
+
+```{r,message=FALSE,warning=FALSE,results='asis', fig.asp=0.9}
+for (i in seq_along(graphs_iter)) {
+  cat("####", paste("Iteration", i - 1, "\n\n"))
+  plot(graphs_iter[[i]],
+    layout = layout6,
+    vertex.size = 45,
+    vertex.color = cbPalette[c(2, 2, 4, 4, 3, 3)],
+    vertex.label.cex = 0.9
+  )
+  cat("\n\n")
 }
 ```
 
@@ -863,36 +1217,34 @@ sessionInfo()
 
 ## References
 
-```{js,echo=FALSE}
-// Fix dynamic tabsets code block rendering issue under pkgdown
-(function () {
-  // Fix the tweaked element class
-  unstyledCode = document.querySelectorAll("button code");
-
-  // Quit if there are no elements matched (when not rendered by pkgdown)
-  if (!unstyledCode.length) {
-    return;
-  }
-
-  for (let i = 0; i < unstyledCode.length; i++) {
-    blockOld = unstyledCode[i].outerHTML;
-    blockNew =
-      "<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>" +
-      blockOld +
-      "</pre>";
-    unstyledCode[i].outerHTML = blockNew;
-  }
-
-  // Activate the first real tab
-  var tabElements = [
-    "ul#multiplicity-graph-sequence-from-gmcplite li:nth-child(2) button",
-    "ul#bounds-at-final-alpha-allocated-for-group-sequential-tests li:nth-child(2) button",
-  ];
-
-  for (let i = 0; i < tabElements.length; i++) {
-    var el = document.querySelector(tabElements[i]);
-    var tab = new bootstrap.Tab(el);
-    tab.show();
-  }
-})();
+```{r, echo=FALSE, results='asis'}
+cat("<script>\n")
+cat("// Fix dynamic tabsets code block rendering issue under pkgdown\n")
+cat("(function () {\n")
+cat("  // Fix the tweaked element class\n")
+cat("  unstyledCode = document.querySelectorAll(\"button code\");\n\n")
+cat("  // Quit if there are no elements matched (when not rendered by pkgdown)\n")
+cat("  if (!unstyledCode.length) {\n")
+cat("    return;\n")
+cat("  }\n\n")
+cat("  for (let i = 0; i < unstyledCode.length; i++) {\n")
+cat("    blockOld = unstyledCode[i].outerHTML;\n")
+cat("    blockNew =\n")
+cat("      \"<pre class='downlit sourceCode r' style='text-align:left;white-space:pre-wrap;'>\" +\n")
+cat("      blockOld +\n")
+cat("      \"</pre>\";\n")
+cat("    unstyledCode[i].outerHTML = blockNew;\n")
+cat("  }\n\n")
+cat("  // Activate the first real tab\n")
+cat("  var tabElements = [\n")
+cat("    \"ul#group-sequential-designs-for-each-hypothesis li:nth-child(2) button\",\n")
+cat("    \"ul#overall-multiplicity-graph-by-iteration li:nth-child(2) button\",\n")
+cat("  ];\n\n")
+cat("  for (let i = 0; i < tabElements.length; i++) {\n")
+cat("    var el = document.querySelector(tabElements[i]);\n")
+cat("    var tab = new bootstrap.Tab(el);\n")
+cat("    tab.show();\n")
+cat("  }\n")
+cat("})();\n")
+cat("</script>\n")
 ```
