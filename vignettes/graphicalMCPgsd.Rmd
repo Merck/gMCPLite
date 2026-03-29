@@ -59,23 +59,25 @@ The endpoints are:
 The populations to be studied are:
 
 - The overall population (All subjects)
-- A subgroup (Subgroup)
+- A biomarker-positive subgroup (BM+)
 
 For simplicity, we design assuming the control group has an exponential time to event with a median of 12 months for OS and 5 months for PFS.
 We design under a proportional hazards assumption.
 ORR for the control group is assumed to be 15%.
+In the BM+ subgroup, we assume hazard ratios of 0.65 for both OS and PFS and an experimental ORR of 35%.
+In the BM- population, the assumed treatment effect is attenuated: hazard ratios of 0.85 for both OS and PFS and an experimental ORR of 25%.
 Some of the choices here are arbitrary, but the intent is to fully specify how patients will be enrolled and followed for $\alpha$-controlled study analyses.
 
 The following design characteristics are also specified to well-characterize outcomes for all subjects by the end of the trial:
 
-- Enrollment is assumed to occur over 18 months. Enrollment will continue until the targeted number of subjects has been enrolled in the subgroup to ensure power as planned for that population. This means, the overall population sample size will be random and power may vary from that planned here.
+- Enrollment is assumed to occur over 18 months. Enrollment will continue until the targeted number of subjects has been enrolled in the BM+ subgroup to ensure power as planned for that population. This means, the overall population sample size will be random and power may vary from that planned here.
 The enrollment increases from 25% in the first two months to 50% in the second 2 months to 75% in the third two months of the final steady state enrollment which continues from the end of month 6 of enrollment until final enrollment expected at 18 months.
 - The first interim analysis will be conducted 6 months after final patient enrolled to adequately assess ORR for all patients. Thus, the analysis is planned at 24 months after start of study enrollment, but will be adapted according to when final enrollment is completed.
 This is the only analysis for ORR and is an interim analysis for PFS and OS with whatever event counts are available at the cutoff.
-- The second interim analysis will be conducted 14 months after final enrollment to ensure minimum follow-up almost 3 times the assumed control median PFS for all subjects. This would be delayed up to 3 months if the final targeted event count for PFS in the subgroup is not achieved at that time. This is to ensure a complete description of tail behavior for PFS in the case a PFS curve has a plateau. PFS and OS will be analyzed. The endpoint counts for OS and for the overall population for PFS are random since the cutoff is determined by the PFS endpoint count for the subgroup.
-- The final analysis will be performed 24 months after final enrollment, ensuring 2 times the assumed median control survival as minimum follow-up for all subjects. Only analysis of OS is planned. The final analysis may be delayed up to 6 months if the targeted OS event count in the subgroup is not achieved. Thus, the planned total duration of the trial for the OS endpoint is 42 months.
+- The second interim analysis will be conducted 14 months after final enrollment to ensure minimum follow-up almost 3 times the assumed control median PFS for all subjects. This would be delayed up to 3 months if the final targeted event count for PFS in the BM+ subgroup is not achieved at that time. This is to ensure a complete description of tail behavior for PFS in the case a PFS curve has a plateau. PFS and OS will be analyzed. The endpoint counts for OS and for the overall population for PFS are random since the cutoff is determined by the PFS endpoint count for the BM+ subgroup.
+- The final analysis will be performed 24 months after final enrollment, ensuring 2 times the assumed median control survival as minimum follow-up for all subjects. Only analysis of OS is planned. The final analysis may be delayed up to 6 months if the targeted OS event count in the BM+ subgroup is not achieved. Thus, the planned total duration of the trial for the OS endpoint is 42 months.
 
-The sample size for the trial will be driven by an adequate sample size and targeted events in the subgroup to ensure 90% power for the OS endpoint assuming a hazard ratio of 0.65.
+The sample size for the trial will be driven by an adequate sample size and targeted events in the BM+ subgroup to ensure 90% power for the OS endpoint assuming a hazard ratio of 0.65.
 For group sequential designs, we assume 1-sided testing.
 
 To reveal code blocks for the remainder of the document, press the code buttons indicated throughout.
@@ -95,17 +97,19 @@ library(knitr)
 library(kableExtra)
 library(gt)
 library(ggplot2) # For plotting
-library(gsDesign) # Group sequential design capabilities
+library(gsDesign) # Group sequential design capabilities (>= 3.9.0.9003 for gsSurvPower)
 library(gMCPLite) # Multiplicity evaluation
+library(simtrial) # Simulation of clinical trial data
+library(survival) # Survival analysis (logrank test)
 ```
 
 ### Multiplicity diagram for hypothesis testing
 
 Following is the multiplicity graph for the trial design.
-We have arbitrarily split Type I error equally between the subgroup and overall populations.
+We have arbitrarily split Type I error equally between the BM+ and overall populations.
 Most $\alpha$ is allocated to OS and the least to ORR, with PFS receiving an intermediate amount.
 This reflects the priority of the endpoints as well as the practicality to detect clinically significant differences in each population.
-Reallocation for each endpoint proceeds from the subgroup to the overall population.
+Reallocation for each endpoint proceeds from the BM+ to the overall population.
 If the overall population hypothesis is rejected for a given endpoint, the reallocation is split between the two populations for another endpoint.
 The choice for allocation and reallocation illustrated here is to demonstrate a complex multiplicity scenario; when actually applying this method the allocation and reallocation choices should be carefully considered.
 
@@ -114,11 +118,11 @@ The choice for allocation and reallocation illustrated here is to demonstrate a 
 # If needed, see help file for gMCPLite::hGraph() for explanation of parameters below
 # Hypothesis names
 nameHypotheses <- c(
-  "H1: OS\n Subgroup",
+  "H1: OS\n BM+",
   "H2: OS\n All subjects",
-  "H3: PFS\n Subgroup",
+  "H3: PFS\n BM+",
   "H4: PFS\n All subjects",
-  "H5: ORR\n Subgroup",
+  "H5: ORR\n BM+",
   "H6: ORR\n All subjects"
 )
 # Number of hypotheses to be tested
@@ -164,15 +168,15 @@ This section needs to be modified by the user to match the study design under co
 Those uncomfortable with coding may wish to design using the
 [gsDesign Shiny app](https://gsdesign.shinyapps.io/prod/) which provides not only a point and click interface, but also a code tab that generates R code that can be copied and plugged in for designs below.
 
-#### H1: OS, Subgroup
+#### H1: OS, BM+
 
-We assume 50% of the population is in the subgroup of interest.
-A sample size of 378 is driven by overall survival (OS) in the subgroup where we assume a hazard ratio of 0.65.
+We assume 50% of the population is biomarker-positive (BM+).
+The sample size is driven by overall survival (OS) in the BM+ population where we assume a hazard ratio of 0.65, targeting 90% power.
 Here we assume a one-sided group sequential design with no futility bound.
 
 ```{r, results='asis'}
 osmedian <- 12 # Median control survival
-# Derive group sequential design for OS in the targeted subgroup
+# Derive group sequential design for OS in the BM+ population
 ossub <- gsDesign::gsSurv(
   k = 3, # 3 analyses for OS
   test.type = 1, # Efficacy bound only (no futility)
@@ -198,10 +202,10 @@ The above text was automatically generated and could be edited appropriately for
 Following is a summary table describing study bounds.
 
 ```{r}
-# tab %>% kable(caption = "Design for OS in the subgroup.") %>% kable_styling()
+# tab %>% kable(caption = "Design for OS in the BM+ population.") %>% kable_styling()
 tab %>%
   gt() %>%
-  tab_header(title = "Design for OS in the Subgroup") %>%
+  tab_header(title = "Design for OS in the BM+ population") %>%
   cols_align(align = "left", columns = Value) %>%
   tab_footnote(
     footnote = "Cumulative boundary crossing probability includes crossing probability at earlier analysis.",
@@ -213,26 +217,82 @@ tab %>%
   )
 ```
 
+The BM+ enrollment rate from H1 determines all other designs.
+The BM- enrollment rate is derived from the BM+ prevalence.
+We also define design parameters for the overall population hypotheses.
+For the overall population, we use geometric mean hazard ratios across BM+ and BM- strata.
+
+```{r}
+### Derived design parameters from H1
+prevalence_bm <- 0.50
+pfsmedian <- 5 # Median control PFS
+
+# BM+ sample size (both arms) from H1
+n_bm <- ceiling(sum(ossub$gamma * ossub$R))
+# Overall sample size driven by prevalence
+n_total <- ceiling(n_bm / prevalence_bm)
+
+# BM- hazard ratios (attenuated treatment effect)
+hr_os_bm_neg <- 0.85
+hr_pfs_bm_neg <- 0.85
+
+# Geometric mean HR for overall population designs
+hr_os_avg <- sqrt(0.65 * hr_os_bm_neg)   # ~0.743
+hr_pfs_avg <- sqrt(0.65 * hr_pfs_bm_neg) # ~0.743
+
+# ORR assumptions
+orr_ctrl <- 0.15
+orr_exp_bm_pos <- 0.35
+orr_exp_bm_neg <- 0.25
+orr_exp_avg <- prevalence_bm * orr_exp_bm_pos + (1 - prevalence_bm) * orr_exp_bm_neg # 0.30
+
+# Stratified enrollment rate matrix for overall population designs
+# (2-column: BM+ / BM-)
+gamma_strat <- cbind(
+  ossub$gamma,                                                  # BM+ rates
+  ossub$gamma * (1 - prevalence_bm) / prevalence_bm            # BM- rates
+)
+
+# Stratified control-arm hazard rates
+lambdaC_os_strat <- matrix(log(2) / osmedian, nrow = 1, ncol = 2,
+                           dimnames = list("0-Inf", c("Stratum 1", "Stratum 2")))
+lambdaC_pfs_strat <- matrix(log(2) / pfsmedian, nrow = 1, ncol = 2,
+                            dimnames = list("0-Inf", c("Stratum 1", "Stratum 2")))
+
+# Stratified dropout rates
+eta_os_strat <- matrix(0.001, nrow = 1, ncol = 2,
+                       dimnames = list("0-Inf", c("Stratum 1", "Stratum 2")))
+eta_pfs_strat <- matrix(0.02, nrow = 1, ncol = 2,
+                        dimnames = list("0-Inf", c("Stratum 1", "Stratum 2")))
+
+cat("BM+ N:", n_bm, "\nTotal N:", n_total, "\n")
+cat("Geometric mean HR (OS):", round(hr_os_avg, 4), "\n")
+cat("Geometric mean HR (PFS):", round(hr_pfs_avg, 4), "\n")
+```
+
 #### H2: OS, All
 
-The total sample size is assumed to be twice the above, N=756.
-The power and hazard ratio can be adjusted to appropriately size the trial rather than starting with adjusting sample size to reach a targeted power.
-For this example, we consider altering power (`beta`) while fixing the hazard ratio at 0.75, representing an increase in median OS from 12 months in the control group to 16 months in the experimental group.
+The total sample size is `r n_total`, approximately twice the BM+ sample size.
+For the overall population, we use `gsSurvPower()` to compute power with BM+-derived enrollment and the geometric mean hazard ratio across strata.
 For this design, we consider a non-binding futility bound where the trial may be stopped early in the overall population if the bound is crossed.
 We use a @HwangShihDeCani bound with $\gamma = -3.25$.
 Study designers should carefully consider implication for parameter choices, particularly if the futility bounds provide sensible guidance for stopping the trial.
 Since the futility bounds are non-binding, the efficacy bound is computed assuming the futility bound is ignored which will control Type I error at the targeted level even if a futility bound is crossed and the trial is continued.
 
 ```{r, results = 'asis'}
-hr <- .75
-beta <- .14
-os <- gsDesign::gsSurv(
-  k = 3, test.type = 4, alpha = 0.01, beta = beta, hr = hr,
-  timing = c(0.62, 0.83), sfu = sfLDOF,
+os <- gsDesign::gsSurvPower(
+  x = ossub,
+  test.type = 4, # Non-binding futility
+  alpha = alphaHypotheses[2],
+  sfu = sfLDOF,
   sfl = sfHSD, sflpar = -3.25,
-  lambdaC = log(2) / 12, eta = 0.001, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 42, minfup = 24,
+  testLower = c(TRUE, TRUE, FALSE),
+  lambdaC = lambdaC_os_strat, # Stratified control hazard (BM+/BM-)
+  hr = hr_os_avg, # Geometric mean HR across strata
+  eta = eta_os_strat, # Stratified dropout
+  etaE = eta_os_strat,
+  gamma = gamma_strat, # Stratified enrollment rates
+  targetN = n_total, # Rescale enrollment to overall population N
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(os)
@@ -252,10 +312,10 @@ We can also plot different design characteristics. Here, we plot the approximate
 plot(os, plottype = "HR", xlab = "Events")
 ```
 
-#### H3: PFS, Subgroup
+#### H3: PFS, BM+
 
 For progression free survival (PFS) we assume a shorter median time to event of 5 months.
-With an assumed hazard ratio of 0.65, we adjust `beta` and `timing` to match the targeted sample size and interim analysis timing.
+With an assumed hazard ratio of 0.65 in the BM+ population, we use `gsSurvPower()` with enrollment rates from H1 and `targetN = n_bm`.
 We assume a larger dropout rate for PFS than we did for OS.
 Here we set up a futility bound for safety.
 This is an asymmetric 2-sided design with both futility and efficacy boundary crossing probabilities under the null hypothesis. The parameter `astar = 0.1` specifies total lower bound spending of 10%.
@@ -263,15 +323,20 @@ The lower @HwangShihDeCani spending bound with $\gamma = -8$ is intended to be c
 This would have to be carefully evaluated by the study design team at the time of design.
 
 ```{r, results='asis'}
-hr <- .65
-beta <- .149
-pfssub <- gsDesign::gsSurv(
-  k = 2, test.type = 6, astar = 0.1, alpha = 0.004, beta = beta, hr = hr,
-  timing = .87, sfu = sfLDOF,
+pfssub <- gsDesign::gsSurvPower(
+  x = ossub,
+  k = 2, test.type = 6, astar = 0.1,
+  alpha = alphaHypotheses[3],
+  sfu = sfLDOF,
   sfl = sfHSD, sflpar = -8,
-  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14,
+  testUpper = c(TRUE, TRUE),
+  testLower = c(TRUE, FALSE),
+  lambdaC = log(2) / pfsmedian, # BM+ control PFS hazard
+  hr = 0.65,
+  eta = 0.02,
+  gamma = ossub$gamma,
+  targetN = n_bm,
+  plannedCalendarTime = c(32, 36),
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfssub)
@@ -281,25 +346,29 @@ cat(summary(pfssub))
 
 ```{r}
 tab %>%
-  kable(caption = "Design for PFS in the subgroup") %>%
+  kable(caption = "Design for PFS in the BM+ population") %>%
   kable_styling()
 ```
 
 #### H4: PFS, All
 
-Finally, we design for PFS in all subjects.
+Finally, we design for PFS in all subjects using `gsSurvPower()` with stratified control hazard rates and the geometric mean hazard ratio.
 In this case, we simplify to a one-sided design.
 A futility bound could be considered, if appropriate.
 
 ```{r}
-hr <- .74
-beta <- .15
-pfs <- gsDesign::gsSurv(
-  k = 2, test.type = 1, alpha = 0.004, beta = beta, hr = hr,
-  timing = .86, sfu = sfLDOF,
-  lambdaC = log(2) / 5, eta = 0.02, S = NULL,
-  gamma = c(2.5, 5, 7.5, 10), R = c(2, 2, 2, 12),
-  T = 32, minfup = 14,
+pfs <- gsDesign::gsSurvPower(
+  x = ossub,
+  k = 2, test.type = 1,
+  alpha = alphaHypotheses[3], # Use same alpha as H3 (H4 starts with 0 but receives alpha via reallocation)
+  sfu = sfLDOF,
+  lambdaC = lambdaC_pfs_strat, # Stratified control PFS hazard (BM+/BM-)
+  hr = hr_pfs_avg, # Geometric mean HR across strata
+  eta = eta_pfs_strat, # Stratified dropout
+  etaE = eta_pfs_strat,
+  gamma = gamma_strat, # Stratified enrollment rates
+  targetN = n_total,
+  plannedCalendarTime = c(32, 36),
   method = "Schoenfeld"
 )
 tab <- gsDesign::gsBoundSummary(pfs)
@@ -311,17 +380,17 @@ tab %>%
 
 #### H5 and H6: ORR
 
-For objective response rate (ORR), we assume an underlying control rate of 15%.
-In the subgroup population, we have almost 90% power to detect a 20% improvement.
+For objective response rate (ORR), we assume an underlying control rate of `r orr_ctrl * 100`%.
+In the BM+ population, we compute power to detect a 20% improvement using the H1-derived BM+ sample size.
 
 ```{r}
-nBinomial(p1 = .35, p2 = .15, alpha = .0005, n = 378)
+nBinomial(p1 = orr_exp_bm_pos, p2 = orr_ctrl, alpha = alphaHypotheses[5], n = n_bm)
 ```
 
-In the all subjects population, we have approximately 95% power to detect an improvement in ORR from 15% to 30%.
+In the all subjects population, we use prevalence-weighted average response rates and the overall sample size.
 
 ```{r}
-nBinomial(p1 = .3, p2 = .15, alpha = .0005, n = 756)
+nBinomial(p1 = orr_exp_avg, p2 = orr_ctrl, alpha = alphaHypotheses[6], n = n_total)
 ```
 
 ### Design list
@@ -357,69 +426,189 @@ Our general objectives here will be to:
 - Ensure spending time is well defined for each analysis of each hypothesis.
 - We will assume that both follow-up duration and event counts may be of interest in determining timing of analyses; e.g., for immuno-oncology therapies there have been delayed treatment effects and the tail of the time-to-event distribution has been important to establish benefit. Thus, we will assume here that over-spending at interim analysis is to be avoided.
 
-Here we assume that the subgroup prevalence was over-estimated in the study design and indicating how spending time can be used to deal with this deviation from plan.
+## Simulated trial data
+
+We simulate a single trial instance using an illness-death model with response.
+The model has four states: alive without response or progression (0),
+responded without progression (1), progressed (2), and dead (3).
+
+```{r, message=FALSE}
+source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "sim_illness_death.R"))
+source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "cut_illness_death.R"))
+```
+
+```{r}
+transition_rate <- build_transition_rates(
+  strata = c("BM+", "BM-"),
+  treatments = c("control", "experimental"),
+  median_pfs = c("BM+" = pfsmedian, "BM-" = pfsmedian),
+  median_os = c("BM+" = osmedian, "BM-" = osmedian),
+  orr = list(
+    "BM+" = c(control = 0.15, experimental = 0.35),
+    "BM-" = c(control = 0.15, experimental = 0.25)
+  ),
+  hr_pfs = c("BM+" = 0.65, "BM-" = 0.85),
+  hr_os = c("BM+" = 0.65, "BM-" = 0.85)
+)
+```
+
+### Simulate one trial
+
+```{r}
+set.seed(20250328)
+steady_rate <- n_total / 15  # 18-month enrollment: 0.25*2 + 0.5*2 + 0.75*2 + 1*12 = 15 rate-months
+
+sim_data <- sim_illness_death(
+  n = n_total,
+  stratum = data.frame(stratum = c("BM+", "BM-"),
+                       p = c(prevalence_bm, 1 - prevalence_bm)),
+  block = c("control", "control", "experimental", "experimental"),
+  enroll_rate = data.frame(
+    rate = steady_rate * c(0.25, 0.50, 0.75, 1.00),
+    duration = c(2, 2, 2, 12)
+  ),
+  transition_rate = transition_rate,
+  dropout_rate = 0.001
+)
+
+fpe <- max(sim_data$ENRLTIME)
+cat("Total N:", nrow(sim_data), "\n")
+cat("N BM+:", sum(sim_data$STRATUM == "BM+"),
+    "N BM-:", sum(sim_data$STRATUM == "BM-"), "\n")
+cat("FPE:", round(fpe, 1), "months\n")
+```
+
+### Determine analysis cut dates and compute p-values
+
+```{r}
+target_pfs_events_sub <- ceiling(max(pfssub$n.I))
+target_os_events_sub <- ceiling(max(ossub$n.I))
+
+analyses <- list(
+  list(min_followup = 6, endpoint = NULL, event_target = NULL,
+       target_stratum = NULL, max_followup = NULL),
+  list(min_followup = 14, endpoint = "PFS", event_target = target_pfs_events_sub,
+       target_stratum = "BM+", max_followup = 17),
+  list(min_followup = 24, endpoint = "OS", event_target = target_os_events_sub,
+       target_stratum = "BM+", max_followup = 30)
+)
+
+cut_dates <- get_analysis_dates(sim_data, analyses)
+
+cat("Analysis cut dates:\n")
+for (i in seq_along(cut_dates)) {
+  cat(sprintf("  Analysis %d: %.1f months (FPE + %.1f)\n",
+              i, cut_dates[i], cut_dates[i] - fpe))
+}
+```
+
+```{r}
+adtte <- lapply(seq_along(cut_dates), function(i) {
+  d <- cut_illness_death(sim_data, cut_dates[i])
+  d$ANALYSIS <- i
+  d
+})
+
+# Helper: 1-sided logrank p-value
+logrank_pval <- function(data, stratified = FALSE) {
+  data$event <- 1L - data$CNSR
+  if (stratified) {
+    fit <- survdiff(Surv(AVAL, event) ~ TRT + strata(STRATUM), data = data)
+  } else {
+    fit <- survdiff(Surv(AVAL, event) ~ TRT, data = data)
+  }
+  obs_ctrl <- if (is.matrix(fit$obs)) sum(fit$obs[1, ]) else fit$obs[1]
+  exp_ctrl <- if (is.matrix(fit$exp)) sum(fit$exp[1, ]) else fit$exp[1]
+  z <- sign(obs_ctrl - exp_ctrl) * sqrt(fit$chisq)
+  pnorm(-z)
+}
+
+# Helper: 1-sided rate difference p-value
+rd_pval <- function(data, stratified = FALSE) {
+  if (!stratified) {
+    n_exp <- sum(data$TRT == "experimental")
+    n_ctrl <- sum(data$TRT == "control")
+    p_exp <- sum(data$AVAL[data$TRT == "experimental"]) / n_exp
+    p_ctrl <- sum(data$AVAL[data$TRT == "control"]) / n_ctrl
+    p_pool <- (p_exp * n_exp + p_ctrl * n_ctrl) / (n_exp + n_ctrl)
+    se <- sqrt(p_pool * (1 - p_pool) * (1 / n_exp + 1 / n_ctrl))
+    if (se == 0) return(0.5)
+    return(pnorm(-(p_exp - p_ctrl) / se))
+  }
+  strata <- unique(data$STRATUM)
+  n_s <- rd_s <- var_s <- numeric(length(strata))
+  for (k in seq_along(strata)) {
+    ds <- data[data$STRATUM == strata[k], ]
+    n_exp <- sum(ds$TRT == "experimental")
+    n_ctrl <- sum(ds$TRT == "control")
+    n_s[k] <- n_exp + n_ctrl
+    p_exp <- sum(ds$AVAL[ds$TRT == "experimental"]) / n_exp
+    p_ctrl <- sum(ds$AVAL[ds$TRT == "control"]) / n_ctrl
+    rd_s[k] <- p_exp - p_ctrl
+    var_s[k] <- p_exp * (1 - p_exp) / n_exp + p_ctrl * (1 - p_ctrl) / n_ctrl
+  }
+  w <- n_s / sum(n_s)
+  z <- sum(w * rd_s) / sqrt(sum(w^2 * var_s))
+  pnorm(-z)
+}
+
+pvals <- list()
+for (i in seq_along(cut_dates)) {
+  d <- adtte[[i]]
+  pvals[[paste0("H1_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "OS", STRATUM == "BM+"))
+  pvals[[paste0("H2_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "OS"), stratified = TRUE)
+  if (i <= 2) {
+    pvals[[paste0("H3_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "PFS", STRATUM == "BM+"))
+    pvals[[paste0("H4_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "PFS"), stratified = TRUE)
+  }
+  if (i == 1) {
+    pvals[[paste0("H5_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR", STRATUM == "BM+"))
+    pvals[[paste0("H6_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR"), stratified = TRUE)
+  }
+}
+```
 
 ## Results entry at time of analysis
 
-Results for each analysis performed should be entered here.
-We begin by documenting timing and event counts of each analysis.
-Then we proceed to enter nominal 1-sided testing p-values for each analysis of each hypothesis.
+### Build results table
 
-### Timing of analyses and resulting event counts and spending times
-
-Recall that the design assumed 50% prevalence of the subgroup.
-Here we assume that the observed prevalence is 40% and that, by specification stated above, we enroll until the targeted subpopulation of 378 is achieved.
-This is assumed to occur after 22 months with a total enrollment of 940.
-Timing of analyses is now targeted as follows:
-
-- The first interim is scheduled 28 months, 6 months after final enrollment.
-- The second interim is scheduled at the later of 14 months after final enrollment (22 + 14 = 36 months after start of enrollment) or the targeted final PFS event count of 297 events. We assume the event count is reached at 34 months and that the achieved final event count is 320 in the subgroup at 36 months.
-- The final analysis is scheduled at 24 months after final enrollment (month 22 + 24 = 46) or when 284 events have been observed in the subgroup, whichever comes first; there is also the qualification that the final analysis will be no more than 30 months after final enrollment (6 months after targeted time).
-We assume the targeted event count is not reached by 6 months after the targeted final analysis time and, thus, the final analysis cutoff is set at month 22 + 30 = 52 and that at that time 270 OS events have been observed in the subgroup.
-
-All of the above leads to event counts and spending for PFS and OS as follows:
-
-```{r}
-### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
-# PFS, overall population
-pfs$n.I <- c(675, 750)
-# PFS, subgroup
-pfssub$n.I <- c(265, 310)
-# OS, overall population
-os$n.I <- c(529, 700, 800)
-# OS, subgroup
-ossub$n.I <- c(185, 245, 295)
-```
-
-### Nominal p-values for each analysis
-
-For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99).
-No other entry is required by the user in any other section of the document.
-We use the subgroup information fraction as spending time for each hypothesis.
-Since we assume that the targeted event count is reached in the subgroup for each endpoint (PFS and OS), the spending time reaches 1 for the final analysis of each hypothesis.
-Another common approach is to use the minimum of planned and actual information fraction for each hypothesis at interim analyses and then spend full alpha at the final analysis.
+Event counts and p-values are assembled from the simulated trial data.
+Spending time uses the BM+ information fraction for each hypothesis.
 
 ```{r,warnings=FALSE,message=FALSE}
-### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
+get_events <- function(analysis_idx, paramcd, stratum = NULL) {
+  d <- adtte[[analysis_idx]]
+  if (!is.null(stratum)) d <- d %>% filter(STRATUM == stratum)
+  sum(d$PARAMCD == paramcd & d$CNSR == 0, na.rm = TRUE)
+}
+
+events_os_sub <- sapply(1:3, function(i) get_events(i, "OS", "BM+"))
+events_os_all <- sapply(1:3, function(i) get_events(i, "OS"))
+events_pfs_sub <- sapply(1:2, function(i) get_events(i, "PFS", "BM+"))
+events_pfs_all <- sapply(1:2, function(i) get_events(i, "PFS"))
+
+# Update design objects with observed event counts
+ossub$n.I <- events_os_sub
+os$n.I <- events_os_all
+pfssub$n.I <- events_pfs_sub
+pfs$n.I <- events_pfs_all
+
 inputResults <- tibble(
   H = c(rep(1, 3), rep(2, 3), rep(3, 2), rep(4, 2), 5, 6),
   Pop = c(
-    rep("Subgroup", 3), rep("All", 3),
-    rep("Subgroup", 2), rep("All", 2),
-    "Subgroup", "All"
+    rep("BM+", 3), rep("All", 3),
+    rep("BM+", 2), rep("All", 2),
+    "BM+", "All"
   ),
   Endpoint = c(rep("OS", 6), rep("PFS", 4), rep("ORR", 2)),
-  # Example with some rejections
   nominalP = c(
-    .03, .0001, .000001,
-    .2, .15, .1,
-    .2, .001,
-    .3, .2,
-    .00001,
-    .1
+    pvals$H1_1, pvals$H1_2, pvals$H1_3,
+    pvals$H2_1, pvals$H2_2, pvals$H2_3,
+    pvals$H3_1, pvals$H3_2,
+    pvals$H4_1, pvals$H4_2,
+    pvals$H5_1,
+    pvals$H6_1
   ),
-  # Example with no rejections
-  # nominalP = rep(.03, 12),
   Analysis = c(1:3, 1:3, 1:2, 1:2, 1, 1),
   events = c(ossub$n.I, os$n.I, pfssub$n.I, pfs$n.I, NA, NA),
   spendingTime = c(
@@ -430,9 +619,8 @@ inputResults <- tibble(
     NA, NA
   )
 )
-kable(inputResults, caption = "DUMMY RESULTS FOR IA2.") %>%
-  kable_styling() %>%
-  add_footnote("Dummy results", notation = "none")
+kable(inputResults, caption = "Results from simulated trial data") %>%
+  kable_styling()
 ```
 
 ## Testing hypotheses

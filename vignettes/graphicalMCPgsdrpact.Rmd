@@ -80,8 +80,8 @@ The following design characteristics are also specified to well-characterize out
 The enrollment increases from 25% in the first two months to 50% in the second 2 months to 75% in the third two months of the final steady state enrollment which continues from the end of month 6 of enrollment until final enrollment expected at 18 months.
 - The first interim analysis will be conducted 6 months after final patient enrolled to adequately assess ORR for all patients. Thus, the analysis is planned at 24 months after start of study enrollment, but will be adapted according to when final enrollment is completed.
 This is the only analysis for ORR and is an interim analysis for PFS and OS with whatever event counts are available at the cutoff.
-- The second interim analysis will be conducted 14 months after final enrollment to ensure minimum follow-up almost 3 times the assumed control median PFS for all subjects. This would be delayed up to 3 months if the final targeted event count for PFS in the subgroup is not achieved at that time. This is to ensure a complete description of tail behavior for PFS in the case a PFS curve has a plateau. PFS and OS will be analyzed. The endpoint counts for OS and for the overall population for PFS are random since the cutoff is determined by the PFS endpoint count for the subgroup.
-- The final analysis will be performed 24 months after final enrollment, ensuring 2 times the assumed median control survival as minimum follow-up for all subjects. Only analysis of OS is planned. The final analysis may be delayed up to 6 months if the targeted OS event count in the subgroup is not achieved. Thus, the planned total duration of the trial for the OS endpoint is 42 months.
+- The second interim analysis will be conducted 14 months after final enrollment to ensure minimum follow-up almost 3 times the assumed control median PFS for all subjects. This would be delayed up to 6 months if the final targeted event count for PFS in either the subgroup or the overall population is not achieved at that time. This is to ensure a complete description of tail behavior for PFS in the case a PFS curve has a plateau. PFS and OS will be analyzed.
+- The final analysis will be performed 24 months after final enrollment, ensuring 2 times the assumed median control survival as minimum follow-up for all subjects. Only analysis of OS is planned. The final analysis may be delayed up to 9 months if the targeted OS event count in either the subgroup or the overall population is not achieved. Thus, the planned total duration of the trial for the OS endpoint is 45 months.
 
 The sample size for the trial will be driven by an adequate sample size and targeted events in the subgroup to ensure 90% power for the OS endpoint assuming a hazard ratio of 0.65.
 For group sequential designs, we assume 1-sided testing.
@@ -105,6 +105,8 @@ library(gt)
 library(ggplot2) # For plotting
 suppressPackageStartupMessages(library(rpact)) # Group sequential design capabilities
 library(graphicalMCP) # Multiplicity evaluation and graph updates
+library(simtrial) # Simulation of clinical trial data
+library(survival) # Survival analysis (logrank test)
 ```
 
 ### Multiplicity diagram for hypothesis testing
@@ -386,52 +388,196 @@ This is equivalent to basing correlation on the information fraction $n_k^{(actu
 Thus, both spending time and information fraction are required to compute bounds for group sequential testing.
 Our general objectives here will be to:
 
-- Spend all Type I error for each hypothesis in its combined interim and final analyses; this requires the spending time to be 1 for the final analysis of a hypothesis.
-- Ensure spending time is well defined for each analysis of each hypothesis.
+- Spend all Type I error for each hypothesis in its combined interim and final analyses; this requires the information fraction to be 1 for the final analysis of a hypothesis.
+- Ensure the information fraction is well defined for each analysis of each hypothesis.
 - We will assume that both follow-up duration and event counts may be of interest in determining timing of analyses; e.g., for immuno-oncology therapies there have been delayed treatment effects and the tail of the time-to-event distribution has been important to establish benefit. Thus, we will assume here that over-spending at interim analysis is to be avoided.
 
-Here we assume that the subgroup prevalence was over-estimated in the study design and indicating how spending time can be used to deal with this deviation from plan.
+Since rpact does not support a separate spending time, we use the actual information fraction $n_k/n_K$ for each hypothesis to drive $\alpha$-spending.
+This means we need each hypothesis to reach its targeted final event count so that the information fraction reaches 1 at the final analysis.
+Consequently, analysis timing targets both the subgroup and overall population event counts, and we allow 3 additional months of delay at each analysis (compared to other vignettes in this series) to ensure both populations accumulate sufficient events.
+
+## Simulated trial data
+
+We simulate a single trial instance using an illness-death model with response.
+The model has four states: alive without response or progression (0),
+responded without progression (1), progressed (2), and dead (3).
+
+```{r, message=FALSE}
+source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "sim_illness_death.R"))
+source(file.path(rprojroot::find_root("DESCRIPTION"), "inst", "simulation", "cut_illness_death.R"))
+```
+
+```{r}
+prevalence_sub <- 0.50
+pfsmedian <- 5
+
+transition_rate <- build_transition_rates(
+  strata = c("Subgroup", "Complement"),
+  treatments = c("control", "experimental"),
+  median_pfs = c("Subgroup" = pfsmedian, "Complement" = pfsmedian),
+  median_os = c("Subgroup" = osmedian, "Complement" = osmedian),
+  orr = list(
+    "Subgroup" = c(control = 0.15, experimental = 0.35),
+    "Complement" = c(control = 0.15, experimental = 0.25)
+  ),
+  hr_pfs = c("Subgroup" = 0.65, "Complement" = 0.85),
+  hr_os = c("Subgroup" = 0.65, "Complement" = 0.85)
+)
+```
+
+### Simulate one trial
+
+```{r}
+set.seed(20250328)
+n_sub <- 378  # Final targeted subgroup N from design narrative
+n_total <- ceiling(n_sub / prevalence_sub)
+steady_rate <- n_total / 15  # 18-month enrollment: 0.25*2 + 0.5*2 + 0.75*2 + 1*12 = 15 rate-months
+
+sim_data <- sim_illness_death(
+  n = n_total,
+  stratum = data.frame(stratum = c("Subgroup", "Complement"),
+                       p = c(prevalence_sub, 1 - prevalence_sub)),
+  block = c("control", "control", "experimental", "experimental"),
+  enroll_rate = data.frame(
+    rate = steady_rate * c(0.25, 0.50, 0.75, 1.00),
+    duration = c(2, 2, 2, 12)
+  ),
+  transition_rate = transition_rate,
+  dropout_rate = 0.001
+)
+
+fpe <- max(sim_data$ENRLTIME)
+cat("Total N:", nrow(sim_data), "\n")
+cat("N Subgroup:", sum(sim_data$STRATUM == "Subgroup"),
+    "N Complement:", sum(sim_data$STRATUM == "Complement"), "\n")
+cat("FPE:", round(fpe, 1), "months\n")
+```
+
+### Determine analysis cut dates and compute p-values
+
+```{r}
+target_pfs_events_sub <- 297  # From design narrative (pfssub final events)
+target_os_events_sub <- 284   # From design narrative (ossub final events)
+target_pfs_events_all <- 594  # Approximate 2x subgroup for overall population
+target_os_events_all <- 568   # Approximate 2x subgroup for overall population
+
+# Determine cut dates targeting subgroup event counts
+analyses_sub <- list(
+  list(min_followup = 6, endpoint = NULL, event_target = NULL,
+       target_stratum = NULL, max_followup = NULL),
+  list(min_followup = 14, endpoint = "PFS", event_target = target_pfs_events_sub,
+       target_stratum = "Subgroup", max_followup = 20),
+  list(min_followup = 24, endpoint = "OS", event_target = target_os_events_sub,
+       target_stratum = "Subgroup", max_followup = 33)
+)
+
+# Determine cut dates targeting overall population event counts
+analyses_all <- list(
+  list(min_followup = 6, endpoint = NULL, event_target = NULL,
+       target_stratum = NULL, max_followup = NULL),
+  list(min_followup = 14, endpoint = "PFS", event_target = target_pfs_events_all,
+       target_stratum = NULL, max_followup = 20),
+  list(min_followup = 24, endpoint = "OS", event_target = target_os_events_all,
+       target_stratum = NULL, max_followup = 33)
+)
+
+cut_dates_sub <- get_analysis_dates(sim_data, analyses_sub)
+cut_dates_all <- get_analysis_dates(sim_data, analyses_all)
+# Use the later of the two dates at each analysis
+cut_dates <- pmax(cut_dates_sub, cut_dates_all)
+
+cat("Analysis cut dates:\n")
+for (i in seq_along(cut_dates)) {
+  cat(sprintf("  Analysis %d: %.1f months (FPE + %.1f)\n",
+              i, cut_dates[i], cut_dates[i] - fpe))
+}
+```
+
+```{r}
+adtte <- lapply(seq_along(cut_dates), function(i) {
+  d <- cut_illness_death(sim_data, cut_dates[i])
+  d$ANALYSIS <- i
+  d
+})
+
+# Helper: 1-sided logrank p-value
+logrank_pval <- function(data, stratified = FALSE) {
+  data$event <- 1L - data$CNSR
+  if (stratified) {
+    fit <- survdiff(Surv(AVAL, event) ~ TRT + strata(STRATUM), data = data)
+  } else {
+    fit <- survdiff(Surv(AVAL, event) ~ TRT, data = data)
+  }
+  obs_ctrl <- if (is.matrix(fit$obs)) sum(fit$obs[1, ]) else fit$obs[1]
+  exp_ctrl <- if (is.matrix(fit$exp)) sum(fit$exp[1, ]) else fit$exp[1]
+  z <- sign(obs_ctrl - exp_ctrl) * sqrt(fit$chisq)
+  pnorm(-z)
+}
+
+# Helper: 1-sided rate difference p-value
+rd_pval <- function(data, stratified = FALSE) {
+  if (!stratified) {
+    n_exp <- sum(data$TRT == "experimental")
+    n_ctrl <- sum(data$TRT == "control")
+    p_exp <- sum(data$AVAL[data$TRT == "experimental"]) / n_exp
+    p_ctrl <- sum(data$AVAL[data$TRT == "control"]) / n_ctrl
+    p_pool <- (p_exp * n_exp + p_ctrl * n_ctrl) / (n_exp + n_ctrl)
+    se <- sqrt(p_pool * (1 - p_pool) * (1 / n_exp + 1 / n_ctrl))
+    if (se == 0) return(0.5)
+    return(pnorm(-(p_exp - p_ctrl) / se))
+  }
+  strata <- unique(data$STRATUM)
+  n_s <- rd_s <- var_s <- numeric(length(strata))
+  for (k in seq_along(strata)) {
+    ds <- data[data$STRATUM == strata[k], ]
+    n_exp <- sum(ds$TRT == "experimental")
+    n_ctrl <- sum(ds$TRT == "control")
+    n_s[k] <- n_exp + n_ctrl
+    p_exp <- sum(ds$AVAL[ds$TRT == "experimental"]) / n_exp
+    p_ctrl <- sum(ds$AVAL[ds$TRT == "control"]) / n_ctrl
+    rd_s[k] <- p_exp - p_ctrl
+    var_s[k] <- p_exp * (1 - p_exp) / n_exp + p_ctrl * (1 - p_ctrl) / n_ctrl
+  }
+  w <- n_s / sum(n_s)
+  z <- sum(w * rd_s) / sqrt(sum(w^2 * var_s))
+  pnorm(-z)
+}
+
+pvals <- list()
+for (i in seq_along(cut_dates)) {
+  d <- adtte[[i]]
+  pvals[[paste0("H1_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "OS", STRATUM == "Subgroup"))
+  pvals[[paste0("H2_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "OS"), stratified = TRUE)
+  if (i <= 2) {
+    pvals[[paste0("H3_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "PFS", STRATUM == "Subgroup"))
+    pvals[[paste0("H4_", i)]] <- logrank_pval(d %>% filter(PARAMCD == "PFS"), stratified = TRUE)
+  }
+  if (i == 1) {
+    pvals[[paste0("H5_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR", STRATUM == "Subgroup"))
+    pvals[[paste0("H6_", i)]] <- rd_pval(d %>% filter(PARAMCD == "ORR"), stratified = TRUE)
+  }
+}
+```
 
 ## Results entry at time of analysis
 
-Results for each analysis performed should be entered here.
-We begin by documenting timing and event counts of each analysis.
-Then we proceed to enter nominal 1-sided testing p-values for each analysis of each hypothesis.
+### Build results table
 
-### Timing of analyses and resulting event counts and spending times
-
-Recall that the design assumed 50% prevalence of the subgroup.
-Here we assume that the observed prevalence is 40% and that, by specification stated above, we enroll until the targeted subpopulation of 378 is achieved.
-This is assumed to occur after 22 months with a total enrollment of 940.
-Timing of analyses is now targeted as follows:
-
-- The first interim is scheduled 28 months, 6 months after final enrollment.
-- The second interim is scheduled at the later of 14 months after final enrollment (22 + 14 = 36 months after start of enrollment) or the targeted final PFS event count of 297 events. We assume the event count is reached at 34 months and that the achieved final event count is 320 in the subgroup at 36 months.
-- The final analysis is scheduled at 24 months after final enrollment (month 22 + 24 = 46) or when 284 events have been observed in the subgroup, whichever comes first; there is also the qualification that the final analysis will be no more than 30 months after final enrollment (6 months after targeted time).
-We assume the targeted event count is not reached by 6 months after the targeted final analysis time and, thus, the final analysis cutoff is set at month 22 + 30 = 52 and that at that time 270 OS events have been observed in the subgroup.
-
-All of the above leads to event counts and spending for PFS and OS as follows:
-
-```{r}
-### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
-# PFS, overall population
-events_pfs_all <- c(675, 750)
-# PFS, subgroup
-events_pfs_sub <- c(265, 310)
-# OS, overall population
-events_os_all <- c(529, 700, 800)
-# OS, subgroup
-events_os_sub <- c(185, 245, 295)
-```
-
-### Nominal p-values for each analysis
-
-For analyses not yet performed enter dummy values, including a p-value near 1 (e.g., .99).
-No other entry is required by the user in any other section of the document.
-NOTE THAT SPENDING TIME IS NOT AN OPTION IN rpact; WE WILL USE INFORMATION FRACTION INSTEAD.
+Event counts and p-values are assembled from the simulated trial data.
+Note that rpact does not support spending time; we use the information fraction instead.
 
 ```{r,warnings=FALSE,message=FALSE}
-### THIS NEEDS TO BE MODIFIED TO MATCH YOUR STUDY
+get_events <- function(analysis_idx, paramcd, stratum = NULL) {
+  d <- adtte[[analysis_idx]]
+  if (!is.null(stratum)) d <- d %>% filter(STRATUM == stratum)
+  sum(d$PARAMCD == paramcd & d$CNSR == 0, na.rm = TRUE)
+}
+
+events_os_sub <- sapply(1:3, function(i) get_events(i, "OS", "Subgroup"))
+events_os_all <- sapply(1:3, function(i) get_events(i, "OS"))
+events_pfs_sub <- sapply(1:2, function(i) get_events(i, "PFS", "Subgroup"))
+events_pfs_all <- sapply(1:2, function(i) get_events(i, "PFS"))
+
 inputResults <- tibble(
   H = c(rep(1, 3), rep(2, 3), rep(3, 2), rep(4, 2), 5, 6),
   Pop = c(
@@ -440,20 +586,17 @@ inputResults <- tibble(
     "Subgroup", "All"
   ),
   Endpoint = c(rep("OS", 6), rep("PFS", 4), rep("ORR", 2)),
-  # Example with some rejections
   nominalP = c(
-    .03, .0001, .000001,
-    .2, .15, .1,
-    .2, .001,
-    .3, .2,
-    .00001,
-    .1
+    pvals$H1_1, pvals$H1_2, pvals$H1_3,
+    pvals$H2_1, pvals$H2_2, pvals$H2_3,
+    pvals$H3_1, pvals$H3_2,
+    pvals$H4_1, pvals$H4_2,
+    pvals$H5_1,
+    pvals$H6_1
   ),
-  # Example with no rejections
-  # nominalP = rep(.03, 12),
   Analysis = c(1:3, 1:3, 1:2, 1:2, 1, 1),
   events = c(events_os_sub, events_os_all, events_pfs_sub, events_pfs_all, NA, NA),
-  # Use information fraction ("h0_info") as spending time for each hypothesis
+  # Use information fraction as spending time for each hypothesis
   spendingTime = c(
     events_os_sub / max(events_os_sub),
     events_os_all / max(events_os_all),
@@ -462,9 +605,8 @@ inputResults <- tibble(
     NA, NA
   )
 )
-kable(inputResults, caption = "DUMMY RESULTS FOR IA2.") %>%
-  kable_styling() %>%
-  add_footnote("Dummy results", notation = "none")
+kable(inputResults, caption = "Results from simulated trial data") %>%
+  kable_styling()
 ```
 
 ## Testing hypotheses
