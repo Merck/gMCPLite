@@ -1,6 +1,6 @@
 Package: gMCPLite
 Title: Lightweight Graph Based Multiple Comparison Procedures
-Version: 0.1.7
+Version: 0.1.8
 Authors@R: c(
     person("Yalin", "Zhu", email = "yalin.zhu@outlook.com", role = "aut",
            comment = c(ORCID = "0000-0003-3830-8660")),
@@ -44,9 +44,12 @@ Imports:
 Suggests:
     covr,
     dplyr,
+    graphicalMCP,
     gridExtra,
     gsDesign,
+    gsDesign2,
     gt,
+    igraph,
     kableExtra,
     knitr,
     multcomp,
@@ -55,6 +58,7 @@ Suggests:
     scales,
     testthat (>= 3.0.0),
     tibble,
-    vdiffr
+    vdiffr,
+    wpgsd
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
