@@ -2,9 +2,9 @@
 #include <R_ext/Rdynload.h>
 
 /* .C calls */
-extern void cgMCP(void *, void *, void *, void *, void *, void *, void *, void *);
-extern void graphmult(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void graphproc(void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void cgMCP(double *, double *, double *, double *, int *, double *, double *, double *);
+extern void graphmult(double *, double *, double *, double *, double *, double *, double *, double *, double *, int *, int *, int *, int *, int *);
+extern void graphproc(double *, double *, double *, double *, int *, double *, int *, int *, int *);
 
 static const R_CMethodDef CEntries[] = {
     {"cgMCP",     (DL_FUNC) &cgMCP,      8},
