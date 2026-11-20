@@ -2,7 +2,7 @@
 #include <Rinternals.h>
 #include <Rdefines.h>
 
-SEXP cgMCP(double *oldM, double *oldW, double *p, double *a, int *n, double *s, double *m, double *w) {
+void cgMCP(double *oldM, double *oldW, double *p, double *a, int *n, double *s, double *m, double *w) {
     /* Since declarations in 'for' loops are only allowed in C99 mode and we can
      * only expect an ISO C99 C compiler for R > 2.12, we now declare these variables
      * in the beginning.
@@ -37,7 +37,7 @@ SEXP cgMCP(double *oldM, double *oldW, double *p, double *a, int *n, double *s, 
 		}
 
 		/* If there is no node that can be rejected, return: */
-		if (j==-1) return R_NilValue;
+		if (j==-1) return;
 
 
 		/* Otherwise reject it: */
@@ -76,5 +76,5 @@ SEXP cgMCP(double *oldM, double *oldW, double *p, double *a, int *n, double *s, 
 	/* We do not return anything, but the last two parameters m and w have been changed (and only these two).
 	 * And actually this line is never reached...
 	 */
-	return R_NilValue;
+	return;
 }
